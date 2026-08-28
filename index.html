@@ -6,6 +6,8 @@
   <title>FrugalCart - Anti-Impulse Delivery Simulator</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- NEW: Supabase Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-16">
 
@@ -85,27 +87,21 @@
         <p class="font-semibold text-slate-300 mb-2 flex items-center gap-1.5">
           <i class="fa-solid fa-wrench text-amber-400"></i> Testing Tools
         </p>
-        <p class="mb-3">Simulate time passing without waiting real days:</p>
         <div class="flex gap-2">
-          <button onclick="fastForward(1)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-center transition">
-            ⏩ +1 Day
-          </button>
-          <button onclick="fastForward(7)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-center transition">
-            ⏩ +7 Days
-          </button>
+          <button onclick="fastForward(1)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-center transition">⏩ +1 Day</button>
+          <button onclick="fastForward(7)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-center transition">⏩ +7 Days</button>
         </div>
       </div>
     </div>
 
     <!-- RIGHT COLUMN: Cart & Shipping Tracker -->
     <div class="lg:col-span-8 space-y-8">
-      
       <section>
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-bold text-white flex items-center gap-2">
             <i class="fa-solid fa-truck-fast text-emerald-400"></i> In Transit (Cooling-Off)
           </h2>
-          <span id="shippingCount" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">0 items</span>
+          <span id="shippingCount" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">Loading...</span>
         </div>
         <div id="shippingList" class="space-y-4"></div>
       </section>
@@ -115,30 +111,35 @@
           <h2 class="text-lg font-bold text-white flex items-center gap-2">
             <i class="fa-solid fa-bag-shopping text-amber-400"></i> Waiting Cart
           </h2>
-          <span id="cartCount" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">0 items</span>
+          <span id="cartCount" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">Loading...</span>
         </div>
         <div id="cartList" class="space-y-3"></div>
       </section>
-
     </div>
   </main>
 
   <script>
-    // --- NEW: URL Auto-Fill ---
-    // If you arrive via Bookmarklet, this grabs the data and fills the form
+    // --- SUPABASE CONFIGURATION ---
+    // 👇 PASTE YOUR URL AND KEY HERE 👇
+    const supabaseUrl = 'https://rhbfhnbneeheabmsdhsy.supabase.co/rest/v1/';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoYmZobmJuZWVoZWFibXNkaHN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5MDYwODIsImV4cCI6MjEwMzQ4MjA4Mn0.nQM5DM1F5Jzc-6zExDtzDjpEip-4Y1Q4UwUSz0ZzYU4';
+    // 👆 -------------------------- 👆
+
+    const client = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // --- URL Auto-Fill (Bookmarklet) ---
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('name')) document.getElementById('itemName').value = urlParams.get('name');
     if (urlParams.has('price')) document.getElementById('itemPrice').value = urlParams.get('price');
     if (urlParams.has('image')) document.getElementById('itemImage').value = urlParams.get('image');
-    
-    // Clean up the URL so it looks nice
     if (window.history.replaceState && urlParams.toString() !== "") {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    // --- State Initialization ---
-    let items = JSON.parse(localStorage.getItem('frugal_items')) || [];
-    let savedTotal = parseFloat(localStorage.getItem('frugal_saved_total')) || 0;
+    // --- App State ---
+    let items = [];
+    let savedTotal = 0;
+    const carriers = ["Impulse Express", "Zen Logistics", "Wallet Saver Post", "Frugal Freight", "Second Thoughts Shipping"];
 
     const itemForm = document.getElementById('itemForm');
     const cartList = document.getElementById('cartList');
@@ -147,44 +148,46 @@
     const shippingCount = document.getElementById('shippingCount');
     const totalSavedDisplay = document.getElementById('totalSaved');
 
-    // --- NEW: Custom Carriers ---
-    const carriers = ["Impulse Express", "Zen Logistics", "Wallet Saver Post", "Frugal Freight", "Second Thoughts Shipping"];
+    // --- Database Functions ---
+    async function loadData() {
+      const { data, error } = await client.from('items').select('*');
+      if (data) {
+        // Extract the special total saved row
+        const savedRow = data.find(i => i.id === 'SAVED_TOTAL');
+        if (savedRow) savedTotal = savedRow.price;
+        
+        // Filter out the special row to get our actual items
+        items = data.filter(i => i.id !== 'SAVED_TOTAL');
+        
+        // Sort items so newest are at the top
+        items.sort((a, b) => b.addedAt - a.addedAt);
+        render();
+      }
+    }
 
-    // --- NEW: Audio Synthesizer (No external sound files needed) ---
+    // Play chime logic
     function playDeliveryChime() {
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
         const ctx = new AudioContext();
-        
-        // Note 1 (Ding)
-        const osc1 = ctx.createOscillator();
-        const gain1 = ctx.createGain();
-        osc1.connect(gain1);
-        gain1.connect(ctx.destination);
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(880, ctx.currentTime); // A5 note
-        gain1.gain.setValueAtTime(0.1, ctx.currentTime);
-        gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-        osc1.start(ctx.currentTime);
-        osc1.stop(ctx.currentTime + 0.5);
+        const osc1 = ctx.createOscillator(); const gain1 = ctx.createGain();
+        osc1.connect(gain1); gain1.connect(ctx.destination);
+        osc1.type = 'sine'; osc1.frequency.setValueAtTime(880, ctx.currentTime);
+        gain1.gain.setValueAtTime(0.1, ctx.currentTime); gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc1.start(ctx.currentTime); osc1.stop(ctx.currentTime + 0.5);
 
-        // Note 2 (Dong)
-        const osc2 = ctx.createOscillator();
-        const gain2 = ctx.createGain();
-        osc2.connect(gain2);
-        gain2.connect(ctx.destination);
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(659.25, ctx.currentTime + 0.2); // E5 note
-        gain2.gain.setValueAtTime(0, ctx.currentTime);
-        gain2.gain.setValueAtTime(0.1, ctx.currentTime + 0.2);
+        const osc2 = ctx.createOscillator(); const gain2 = ctx.createGain();
+        osc2.connect(gain2); gain2.connect(ctx.destination);
+        osc2.type = 'sine'; osc2.frequency.setValueAtTime(659.25, ctx.currentTime + 0.2);
+        gain2.gain.setValueAtTime(0, ctx.currentTime); gain2.gain.setValueAtTime(0.1, ctx.currentTime + 0.2);
         gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
-        osc2.start(ctx.currentTime + 0.2);
-        osc2.stop(ctx.currentTime + 1.2);
-      } catch(e) { console.log("Audio skipped."); }
+        osc2.start(ctx.currentTime + 0.2); osc2.stop(ctx.currentTime + 1.2);
+      } catch(e) {}
     }
 
-    itemForm.addEventListener('submit', (e) => {
+    // --- Actions ---
+    itemForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const newItem = {
         id: 'item_' + Date.now(),
@@ -196,63 +199,69 @@
         status: 'cart',
         addedAt: Date.now(),
         shippedAt: null,
-        carrier: null, // New
-        hasChimed: false // New
+        carrier: null,
+        hasChimed: false
       };
 
       items.unshift(newItem);
-      saveState();
-      itemForm.reset();
       render();
+      itemForm.reset();
+      await client.from('items').insert(newItem); // Push to cloud
     });
 
-    function startShipping(id) {
+    async function startShipping(id) {
       const item = items.find(i => i.id === id);
       if (item) {
         item.status = 'shipping';
         item.shippedAt = Date.now();
-        item.carrier = carriers[Math.floor(Math.random() * carriers.length)]; // Assign random carrier
-        saveState();
+        item.carrier = carriers[Math.floor(Math.random() * carriers.length)];
         render();
+        await client.from('items').upsert(item); // Update in cloud
       }
     }
 
-    function resolveItem(id, outcome) {
+    async function resolveItem(id, outcome) {
       const item = items.find(i => i.id === id);
       if (!item) return;
 
       if (outcome === 'saved') {
         savedTotal += item.price;
-        localStorage.setItem('frugal_saved_total', savedTotal.toString());
+        // Save the new total to our special row in the cloud
+        await client.from('items').upsert({ id: 'SAVED_TOTAL', price: savedTotal, name: 'Total Saved' });
       }
       
       items = items.filter(i => i.id !== id);
-      saveState();
       render();
+      await client.from('items').delete().eq('id', id); // Delete from cloud
     }
 
-    function removeItem(id) {
+    async function removeItem(id) {
       items = items.filter(i => i.id !== id);
-      saveState();
       render();
+      await client.from('items').delete().eq('id', id); // Delete from cloud
     }
 
-    function fastForward(days) {
+    async function updateItemInCloud(item) {
+      await client.from('items').upsert(item);
+    }
+
+    async function fastForward(days) {
       const ms = days * 24 * 60 * 60 * 1000;
+      const updates = [];
       items.forEach(item => {
-        if (item.shippedAt) item.shippedAt -= ms;
+        if (item.shippedAt) {
+          item.shippedAt -= ms;
+          updates.push(item);
+        }
       });
-      saveState();
       render();
-    }
-
-    function saveState() {
-      localStorage.setItem('frugal_items', JSON.stringify(items));
+      if (updates.length > 0) {
+        await client.from('items').upsert(updates); // Bulk update in cloud
+      }
     }
 
     function getShippingProgress(item) {
       if (!item.shippedAt) return { pct: 0, statusText: 'Preparing Label' };
-
       const elapsedMs = Date.now() - item.shippedAt;
       const totalMs = item.coolingDays * 24 * 60 * 60 * 1000;
       const pct = Math.min(100, Math.round((elapsedMs / totalMs) * 100));
@@ -268,7 +277,6 @@
 
     function render() {
       totalSavedDisplay.textContent = `$${savedTotal.toFixed(2)}`;
-
       const cartItems = items.filter(i => i.status === 'cart');
       const shippingItems = items.filter(i => i.status === 'shipping');
 
@@ -301,16 +309,15 @@
       if (shippingItems.length === 0) {
         shippingList.innerHTML = `<div class="p-8 border border-dashed border-slate-800 rounded-2xl text-center text-slate-500 text-xs">No active packages cooling off. Checkout an item to start tracking!</div>`;
       } else {
-        let chimeTriggered = false; // Prevent playing sound 10 times at once
-
+        let chimeTriggered = false;
         shippingList.innerHTML = shippingItems.map(item => {
           const { pct, statusText, daysLeft } = getShippingProgress(item);
           const isDelivered = pct >= 100;
 
-          // NEW: Play sound and save state if newly delivered
           if (isDelivered && !item.hasChimed) {
             item.hasChimed = true;
             chimeTriggered = true;
+            updateItemInCloud(item); // Update cloud so it doesn't chime on next reload
           }
 
           return `
@@ -328,8 +335,6 @@
                   <div class="text-[11px] text-slate-400">${isDelivered ? 'Arrived' : `${daysLeft} days remaining`}</div>
                 </div>
               </div>
-
-              <!-- Progress Bar -->
               <div class="space-y-1.5">
                 <div class="flex justify-between text-xs font-medium">
                   <span class="${isDelivered ? 'text-indigo-400 font-bold' : 'text-slate-300'}">${statusText}</span>
@@ -339,8 +344,6 @@
                   <div class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full transition-all duration-500" style="width: ${pct}%"></div>
                 </div>
               </div>
-
-              <!-- Post-Delivery Decision Gate -->
               ${isDelivered ? `
                 <div class="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 bg-indigo-950/20 p-3 rounded-xl">
                   <p class="text-xs text-indigo-200">Package arrived! Did you survive the cooling period without it?</p>
@@ -358,14 +361,12 @@
           `;
         }).join('');
 
-        if (chimeTriggered) {
-          playDeliveryChime();
-          saveState();
-        }
+        if (chimeTriggered) playDeliveryChime();
       }
     }
 
-    render();
+    // Start the app!
+    loadData();
   </script>
 </body>
 </html>
