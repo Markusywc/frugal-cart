@@ -10,8 +10,8 @@
   <!-- Supabase Client Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
-  <!-- NEW: Link to PWA Manifest for Android Install/Share -->
-  <link rel="manifest" href="/manifest.json">
+  <!-- NEW: Updated path (removed the slash) for GitHub Pages compatibility -->
+  <link rel="manifest" href="manifest.json">
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-16">
 
@@ -128,14 +128,15 @@
     // --- SUPABASE CONFIGURATION ---
     // 👇 PASTE YOUR URL AND KEY HERE 👇
     const supabaseUrl = 'https://rhbfhnbneeheabmsdhsy.supabase.co/rest/v1/';
-    const supabaseKey ='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoYmZobmJuZWVoZWFibXNkaHN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5MDYwODIsImV4cCI6MjEwMzQ4MjA4Mn0.nQM5DM1F5Jzc-6zExDtzDjpEip-4Y1Q4UwUSz0ZzYU4';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoYmZobmJuZWVoZWFibXNkaHN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5MDYwODIsImV4cCI6MjEwMzQ4MjA4Mn0.nQM5DM1F5Jzc-6zExDtzDjpEip-4Y1Q4UwUSz0ZzYU4';
     // 👆 -------------------------- 👆
 
     const client = supabase.createClient(supabaseUrl, supabaseKey);
 
     // --- Register Service Worker ---
+    // NEW: Updated path (removed the slash) for GitHub Pages compatibility
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js');
+      navigator.serviceWorker.register('sw.js');
     }
 
     // --- Catch Bookmarklets AND Android Shares ---
