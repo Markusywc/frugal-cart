@@ -6,8 +6,12 @@
   <title>FrugalCart - Anti-Impulse Delivery Simulator</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <!-- NEW: Supabase Client Library -->
+  
+  <!-- Supabase Client Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- NEW: Link to PWA Manifest for Android Install/Share -->
+  <link rel="manifest" href="/manifest.json">
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-16">
 
@@ -54,7 +58,7 @@
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Image URL (Optional)</label>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Image URL or Website Link</label>
             <input type="url" id="itemImage" placeholder="https://..."
               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
           </div>
@@ -96,6 +100,7 @@
 
     <!-- RIGHT COLUMN: Cart & Shipping Tracker -->
     <div class="lg:col-span-8 space-y-8">
+      
       <section>
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-bold text-white flex items-center gap-2">
@@ -115,6 +120,7 @@
         </div>
         <div id="cartList" class="space-y-3"></div>
       </section>
+
     </div>
   </main>
 
@@ -122,16 +128,34 @@
     // --- SUPABASE CONFIGURATION ---
     // 👇 PASTE YOUR URL AND KEY HERE 👇
     const supabaseUrl = 'https://rhbfhnbneeheabmsdhsy.supabase.co/rest/v1/';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoYmZobmJuZWVoZWFibXNkaHN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5MDYwODIsImV4cCI6MjEwMzQ4MjA4Mn0.nQM5DM1F5Jzc-6zExDtzDjpEip-4Y1Q4UwUSz0ZzYU4';
+    const supabaseKey ='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoYmZobmJuZWVoZWFibXNkaHN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5MDYwODIsImV4cCI6MjEwMzQ4MjA4Mn0.nQM5DM1F5Jzc-6zExDtzDjpEip-4Y1Q4UwUSz0ZzYU4';
     // 👆 -------------------------- 👆
 
     const client = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // --- URL Auto-Fill (Bookmarklet) ---
+    // --- Register Service Worker ---
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+
+    // --- Catch Bookmarklets AND Android Shares ---
     const urlParams = new URLSearchParams(window.location.search);
+    
+    // Catch Bookmarklet format
     if (urlParams.has('name')) document.getElementById('itemName').value = urlParams.get('name');
     if (urlParams.has('price')) document.getElementById('itemPrice').value = urlParams.get('price');
     if (urlParams.has('image')) document.getElementById('itemImage').value = urlParams.get('image');
+
+    // Catch Android Native Share format
+    let sharedText = urlParams.get('share_text') || urlParams.get('share_url');
+    let sharedTitle = urlParams.get('share_title');
+    
+    if (sharedText) {
+      document.getElementById('itemImage').value = sharedText;
+      if (sharedTitle) document.getElementById('itemName').value = sharedTitle;
+    }
+
+    // Clean up the URL so it looks nice
     if (window.history.replaceState && urlParams.toString() !== "") {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -152,20 +176,15 @@
     async function loadData() {
       const { data, error } = await client.from('items').select('*');
       if (data) {
-        // Extract the special total saved row
         const savedRow = data.find(i => i.id === 'SAVED_TOTAL');
         if (savedRow) savedTotal = savedRow.price;
         
-        // Filter out the special row to get our actual items
         items = data.filter(i => i.id !== 'SAVED_TOTAL');
-        
-        // Sort items so newest are at the top
         items.sort((a, b) => b.addedAt - a.addedAt);
         render();
       }
     }
 
-    // Play chime logic
     function playDeliveryChime() {
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -226,7 +245,6 @@
 
       if (outcome === 'saved') {
         savedTotal += item.price;
-        // Save the new total to our special row in the cloud
         await client.from('items').upsert({ id: 'SAVED_TOTAL', price: savedTotal, name: 'Total Saved' });
       }
       
@@ -317,7 +335,7 @@
           if (isDelivered && !item.hasChimed) {
             item.hasChimed = true;
             chimeTriggered = true;
-            updateItemInCloud(item); // Update cloud so it doesn't chime on next reload
+            updateItemInCloud(item); 
           }
 
           return `
@@ -335,6 +353,8 @@
                   <div class="text-[11px] text-slate-400">${isDelivered ? 'Arrived' : `${daysLeft} days remaining`}</div>
                 </div>
               </div>
+
+              <!-- Progress Bar -->
               <div class="space-y-1.5">
                 <div class="flex justify-between text-xs font-medium">
                   <span class="${isDelivered ? 'text-indigo-400 font-bold' : 'text-slate-300'}">${statusText}</span>
@@ -344,6 +364,8 @@
                   <div class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full transition-all duration-500" style="width: ${pct}%"></div>
                 </div>
               </div>
+
+              <!-- Post-Delivery Decision Gate -->
               ${isDelivered ? `
                 <div class="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 bg-indigo-950/20 p-3 rounded-xl">
                   <p class="text-xs text-indigo-200">Package arrived! Did you survive the cooling period without it?</p>

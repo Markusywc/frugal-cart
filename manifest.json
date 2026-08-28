@@ -1,0 +1,25 @@
+{
+  "name": "FrugalCart",
+  "short_name": "FrugalCart",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "description": "Impulse Deterrent & Cooling-Off Tracker",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/673/673966.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "title": "share_title",
+      "text": "share_text",
+      "url": "share_url"
+    }
+  }
+}
