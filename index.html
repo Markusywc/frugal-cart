@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FrugalCart - Anti-Impulse Delivery Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-16">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <span class="text-3xl">📦</span>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-white">FrugalCart</h1>
+          <p class="text-xs text-slate-400">Impulse Deterrent & Cooling-Off Tracker</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="bg-emerald-950/80 border border-emerald-500/30 px-3.5 py-1.5 rounded-full flex items-center gap-2">
+          <span class="text-xs text-emerald-400 font-medium">Saved via Cooling-Off:</span>
+          <span id="totalSaved" class="text-emerald-300 font-bold text-sm">$0.00</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+    
+    <!-- LEFT COLUMN: Product Input Form -->
+    <div class="lg:col-span-4 space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <h2 class="text-lg font-semibold text-white mb-1 flex items-center gap-2">
+          <i class="fa-solid fa-cart-plus text-indigo-400"></i> Log an Impulse
+        </h2>
+        <p class="text-xs text-slate-400 mb-4">Caught yourself wanting to buy something? Park it here first.</p>
+
+        <form id="itemForm" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Product Title *</label>
+            <input type="text" id="itemName" required placeholder="e.g. Sony WH-1000XM5 Headphones"
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Price ($) *</label>
+            <input type="number" step="0.01" id="itemPrice" required placeholder="149.99"
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Image URL (Optional)</label>
+            <input type="url" id="itemImage" placeholder="https://..."
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Cooling-Off Period (Days)</label>
+            <select id="coolingPeriod" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+              <option value="3">3 Days (Small impulse)</option>
+              <option value="7" selected>7 Days (Standard cooling)</option>
+              <option value="14">14 Days (Substantial purchase)</option>
+              <option value="30">30 Days (Major splurge)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Why do I want this right now? *</label>
+            <textarea id="itemReason" required rows="2" placeholder="e.g. Saw it on social media, thought it looked cool..."
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
+          </div>
+
+          <button type="submit"
+            class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white text-sm font-semibold py-2.5 rounded-xl transition duration-150 flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
+            <i class="fa-solid fa-plus"></i> Add to Waiting Cart
+          </button>
+        </form>
+      </div>
+
+      <!-- Quick Tester Box -->
+      <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 text-xs text-slate-400">
+        <p class="font-semibold text-slate-300 mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-wrench text-amber-400"></i> Testing Tools
+        </p>
+        <p class="mb-3">Simulate time passing without waiting real days:</p>
+        <div class="flex gap-2">
+          <button onclick="fastForward(1)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-center transition">
+            ⏩ +1 Day
+          </button>
+          <button onclick="fastForward(7)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-center transition">
+            ⏩ +7 Days
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Cart & Shipping Tracker -->
+    <div class="lg:col-span-8 space-y-8">
+      
+      <section>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-truck-fast text-emerald-400"></i> In Transit (Cooling-Off)
+          </h2>
+          <span id="shippingCount" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">0 items</span>
+        </div>
+        <div id="shippingList" class="space-y-4"></div>
+      </section>
+
+      <section>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-bag-shopping text-amber-400"></i> Waiting Cart
+          </h2>
+          <span id="cartCount" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">0 items</span>
+        </div>
+        <div id="cartList" class="space-y-3"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    // --- NEW: URL Auto-Fill ---
+    // If you arrive via Bookmarklet, this grabs the data and fills the form
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('name')) document.getElementById('itemName').value = urlParams.get('name');
+    if (urlParams.has('price')) document.getElementById('itemPrice').value = urlParams.get('price');
+    if (urlParams.has('image')) document.getElementById('itemImage').value = urlParams.get('image');
+    
+    // Clean up the URL so it looks nice
+    if (window.history.replaceState && urlParams.toString() !== "") {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // --- State Initialization ---
+    let items = JSON.parse(localStorage.getItem('frugal_items')) || [];
+    let savedTotal = parseFloat(localStorage.getItem('frugal_saved_total')) || 0;
+
+    const itemForm = document.getElementById('itemForm');
+    const cartList = document.getElementById('cartList');
+    const shippingList = document.getElementById('shippingList');
+    const cartCount = document.getElementById('cartCount');
+    const shippingCount = document.getElementById('shippingCount');
+    const totalSavedDisplay = document.getElementById('totalSaved');
+
+    // --- NEW: Custom Carriers ---
+    const carriers = ["Impulse Express", "Zen Logistics", "Wallet Saver Post", "Frugal Freight", "Second Thoughts Shipping"];
+
+    // --- NEW: Audio Synthesizer (No external sound files needed) ---
+    function playDeliveryChime() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        
+        // Note 1 (Ding)
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(880, ctx.currentTime); // A5 note
+        gain1.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc1.start(ctx.currentTime);
+        osc1.stop(ctx.currentTime + 0.5);
+
+        // Note 2 (Dong)
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(659.25, ctx.currentTime + 0.2); // E5 note
+        gain2.gain.setValueAtTime(0, ctx.currentTime);
+        gain2.gain.setValueAtTime(0.1, ctx.currentTime + 0.2);
+        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+        osc2.start(ctx.currentTime + 0.2);
+        osc2.stop(ctx.currentTime + 1.2);
+      } catch(e) { console.log("Audio skipped."); }
+    }
+
+    itemForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const newItem = {
+        id: 'item_' + Date.now(),
+        name: document.getElementById('itemName').value,
+        price: parseFloat(document.getElementById('itemPrice').value),
+        image: document.getElementById('itemImage').value || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80',
+        coolingDays: parseInt(document.getElementById('coolingPeriod').value),
+        reason: document.getElementById('itemReason').value,
+        status: 'cart',
+        addedAt: Date.now(),
+        shippedAt: null,
+        carrier: null, // New
+        hasChimed: false // New
+      };
+
+      items.unshift(newItem);
+      saveState();
+      itemForm.reset();
+      render();
+    });
+
+    function startShipping(id) {
+      const item = items.find(i => i.id === id);
+      if (item) {
+        item.status = 'shipping';
+        item.shippedAt = Date.now();
+        item.carrier = carriers[Math.floor(Math.random() * carriers.length)]; // Assign random carrier
+        saveState();
+        render();
+      }
+    }
+
+    function resolveItem(id, outcome) {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+
+      if (outcome === 'saved') {
+        savedTotal += item.price;
+        localStorage.setItem('frugal_saved_total', savedTotal.toString());
+      }
+      
+      items = items.filter(i => i.id !== id);
+      saveState();
+      render();
+    }
+
+    function removeItem(id) {
+      items = items.filter(i => i.id !== id);
+      saveState();
+      render();
+    }
+
+    function fastForward(days) {
+      const ms = days * 24 * 60 * 60 * 1000;
+      items.forEach(item => {
+        if (item.shippedAt) item.shippedAt -= ms;
+      });
+      saveState();
+      render();
+    }
+
+    function saveState() {
+      localStorage.setItem('frugal_items', JSON.stringify(items));
+    }
+
+    function getShippingProgress(item) {
+      if (!item.shippedAt) return { pct: 0, statusText: 'Preparing Label' };
+
+      const elapsedMs = Date.now() - item.shippedAt;
+      const totalMs = item.coolingDays * 24 * 60 * 60 * 1000;
+      const pct = Math.min(100, Math.round((elapsedMs / totalMs) * 100));
+
+      let statusText = 'Label Created';
+      if (pct >= 100) statusText = '📦 Delivered to Digital Doorstep!';
+      else if (pct >= 70) statusText = '🚚 Out for Delivery (Almost arrived)';
+      else if (pct >= 20) statusText = '✈️ In Transit (Cooling off...)';
+
+      const daysLeft = Math.max(0, Math.ceil((totalMs - elapsedMs) / (1000 * 60 * 60 * 24)));
+      return { pct, statusText, daysLeft };
+    }
+
+    function render() {
+      totalSavedDisplay.textContent = `$${savedTotal.toFixed(2)}`;
+
+      const cartItems = items.filter(i => i.status === 'cart');
+      const shippingItems = items.filter(i => i.status === 'shipping');
+
+      cartCount.textContent = `${cartItems.length} items`;
+      shippingCount.textContent = `${shippingItems.length} items`;
+
+      if (cartItems.length === 0) {
+        cartList.innerHTML = `<div class="p-6 border border-dashed border-slate-800 rounded-2xl text-center text-slate-500 text-xs">Waiting cart is empty.</div>`;
+      } else {
+        cartList.innerHTML = cartItems.map(item => `
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+              <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-14 h-14 rounded-lg object-cover bg-slate-800 border border-slate-700" />
+              <div>
+                <h4 class="font-medium text-slate-100 text-sm">${item.name}</h4>
+                <p class="text-xs text-slate-400 line-clamp-1 italic">"${item.reason}"</p>
+                <span class="text-xs font-semibold text-emerald-400">$${item.price.toFixed(2)}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button onclick="removeItem('${item.id}')" class="text-xs text-slate-500 hover:text-rose-400 px-3 py-2 rounded-lg transition">Delete</button>
+              <button onclick="startShipping('${item.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md">
+                <i class="fa-solid fa-truck"></i> Checkout & Ship (${item.coolingDays}d)
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      if (shippingItems.length === 0) {
+        shippingList.innerHTML = `<div class="p-8 border border-dashed border-slate-800 rounded-2xl text-center text-slate-500 text-xs">No active packages cooling off. Checkout an item to start tracking!</div>`;
+      } else {
+        let chimeTriggered = false; // Prevent playing sound 10 times at once
+
+        shippingList.innerHTML = shippingItems.map(item => {
+          const { pct, statusText, daysLeft } = getShippingProgress(item);
+          const isDelivered = pct >= 100;
+
+          // NEW: Play sound and save state if newly delivered
+          if (isDelivered && !item.hasChimed) {
+            item.hasChimed = true;
+            chimeTriggered = true;
+          }
+
+          return `
+            <div class="bg-slate-900 border ${isDelivered ? 'border-indigo-500/50 ring-1 ring-indigo-500/30' : 'border-slate-800'} rounded-2xl p-5 shadow-lg space-y-4">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-12 h-12 rounded-lg object-cover bg-slate-800" />
+                  <div>
+                    <h3 class="font-bold text-slate-100 text-sm">${item.name}</h3>
+                    <p class="text-[11px] text-slate-400 font-mono">Carrier: ${item.carrier} | Trk: ${item.id.toUpperCase()}</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs font-bold text-emerald-400">$${item.price.toFixed(2)}</div>
+                  <div class="text-[11px] text-slate-400">${isDelivered ? 'Arrived' : `${daysLeft} days remaining`}</div>
+                </div>
+              </div>
+
+              <!-- Progress Bar -->
+              <div class="space-y-1.5">
+                <div class="flex justify-between text-xs font-medium">
+                  <span class="${isDelivered ? 'text-indigo-400 font-bold' : 'text-slate-300'}">${statusText}</span>
+                  <span class="text-slate-400">${pct}%</span>
+                </div>
+                <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                  <div class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full transition-all duration-500" style="width: ${pct}%"></div>
+                </div>
+              </div>
+
+              <!-- Post-Delivery Decision Gate -->
+              ${isDelivered ? `
+                <div class="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 bg-indigo-950/20 p-3 rounded-xl">
+                  <p class="text-xs text-indigo-200">Package arrived! Did you survive the cooling period without it?</p>
+                  <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="resolveItem('${item.id}', 'saved')" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition">
+                      🎉 Changed Mind (Saved $${item.price})
+                    </button>
+                    <button onclick="resolveItem('${item.id}', 'bought')" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3.5 py-1.5 rounded-lg transition">
+                      Still Want (Buy)
+                    </button>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+
+        if (chimeTriggered) {
+          playDeliveryChime();
+          saveState();
+        }
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
