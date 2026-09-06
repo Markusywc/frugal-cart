@@ -45,7 +45,7 @@
   <main class="max-w-6xl mx-auto px-4 py-6">
 
     <!-- ========================================= -->
-    <!-- VIEW 1: COOLING CART (Original App)       -->
+    <!-- VIEW 1: COOLING CART                      -->
     <!-- ========================================= -->
     <div id="viewCart" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
       <div class="lg:col-span-4 space-y-6">
@@ -63,8 +63,12 @@
               <input type="number" step="0.01" id="itemPrice" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" />
             </div>
             <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Image URL or Link</label>
-              <input type="url" id="itemImage" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" />
+              <label class="block text-xs font-medium text-slate-300 mb-1">Product Link (Where to buy) *</label>
+              <input type="url" id="itemUrl" required placeholder="https://..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Image URL (Optional)</label>
+              <input type="url" id="itemImage" placeholder="https://..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" />
             </div>
             <div>
               <label class="block text-xs font-medium text-slate-300 mb-1">Cooling-Off Period (Days)</label>
@@ -84,7 +88,7 @@
             </button>
           </form>
         </div>
-        <!-- Time skip buttons for testing -->
+        
         <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 text-xs text-slate-400">
           <p class="font-semibold text-slate-300 mb-2"><i class="fa-solid fa-wrench text-amber-400"></i> Testing Tools</p>
           <div class="flex gap-2">
@@ -117,8 +121,6 @@
     <!-- ========================================= -->
     <div id="viewExpenses" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
       <div class="lg:col-span-4 space-y-6">
-        
-        <!-- Budget Setup -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
           <h2 class="text-lg font-semibold text-white mb-2"><i class="fa-solid fa-piggy-bank text-emerald-400"></i> Monthly Budget</h2>
           <p class="text-xs text-slate-400 mb-4">How much disposable "fun money" do you allow yourself per month?</p>
@@ -128,7 +130,6 @@
           </div>
         </div>
 
-        <!-- Add Expense -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
           <h2 class="text-lg font-semibold text-white mb-4"><i class="fa-solid fa-receipt text-rose-400"></i> Log Expense</h2>
           <form id="expenseForm" class="space-y-4">
@@ -146,7 +147,6 @@
       </div>
 
       <div class="lg:col-span-8 space-y-6">
-        <!-- Dashboard Stats -->
         <div class="grid grid-cols-2 gap-4">
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
             <p class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Spent This Month</p>
@@ -170,30 +170,34 @@
     <!-- ========================================= -->
     <div id="viewFinance" class="hidden grid grid-cols-1 gap-8">
       
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl max-w-2xl mx-auto w-full">
+      <!-- CREATE PLAN VIEW -->
+      <div id="financeCreateView" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl max-w-2xl mx-auto w-full">
         <h2 class="text-xl font-bold text-white mb-2"><i class="fa-solid fa-bullseye text-indigo-400"></i> Set a Goal</h2>
-        <p class="text-sm text-slate-400 mb-6">Select an item from your cart to see how long it will take to save for it based on your actual spending habits.</p>
+        <p class="text-sm text-slate-400 mb-6">Select an item from your cart to start a tracked savings plan. We will monitor your progress based on your monthly spending.</p>
         
         <div class="space-y-5">
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">Target Item</label>
-            <select id="financeTargetItem" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100" onchange="calculateFinance()"></select>
+            <select id="financeTargetItem" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100"></select>
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">Desired Timeframe (Months to save)</label>
-            <input type="number" id="financeMonths" value="6" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100" oninput="calculateFinance()" />
+            <input type="number" id="financeMonths" value="6" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100" />
           </div>
+          <button onclick="saveFinancePlan()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-600/20">
+            Start Tracking Goal
+          </button>
         </div>
+      </div>
 
-        <div id="financeResult" class="mt-8 hidden">
-          <!-- Dynamic Results injected here via JS -->
-        </div>
+      <!-- ACTIVE PLAN VIEW -->
+      <div id="financeActiveView" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl max-w-2xl mx-auto w-full">
+        <!-- Dynamic active plan HTML goes here -->
       </div>
 
     </div>
   </main>
 
-  <!-- JAVASCRIPT LOGIC -->
   <script>
     // --- Register Service Worker ---
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
@@ -203,12 +207,16 @@
     if (urlParams.has('name')) document.getElementById('itemName').value = urlParams.get('name');
     if (urlParams.has('price')) document.getElementById('itemPrice').value = urlParams.get('price');
     if (urlParams.has('image')) document.getElementById('itemImage').value = urlParams.get('image');
+    if (urlParams.has('url')) document.getElementById('itemUrl').value = urlParams.get('url');
+
+    // When sharing from Android, the shared text is almost always the product URL
     let sharedText = urlParams.get('share_text') || urlParams.get('share_url');
     let sharedTitle = urlParams.get('share_title');
     if (sharedText) {
-      document.getElementById('itemImage').value = sharedText;
+      document.getElementById('itemUrl').value = sharedText;
       if (sharedTitle) document.getElementById('itemName').value = sharedTitle;
     }
+    
     if (window.history.replaceState && urlParams.toString() !== "") {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -217,11 +225,11 @@
     let items = JSON.parse(localStorage.getItem('frugal_items')) || [];
     let savedTotal = parseFloat(localStorage.getItem('frugal_saved_total')) || 0;
     
-    // New Data for Finances
     let expenses = JSON.parse(localStorage.getItem('frugal_expenses')) || [];
     let monthlyBudget = parseFloat(localStorage.getItem('frugal_budget')) || 1000;
     document.getElementById('monthlyBudget').value = monthlyBudget;
 
+    let financePlan = JSON.parse(localStorage.getItem('frugal_finance')) || null;
     const carriers = ["Impulse Express", "Zen Logistics", "Wallet Saver Post", "Frugal Freight", "Second Thoughts Shipping"];
 
     function saveState() {
@@ -229,6 +237,7 @@
       localStorage.setItem('frugal_saved_total', savedTotal.toString());
       localStorage.setItem('frugal_expenses', JSON.stringify(expenses));
       localStorage.setItem('frugal_budget', monthlyBudget.toString());
+      localStorage.setItem('frugal_finance', JSON.stringify(financePlan));
     }
 
     // --- TAB SWITCHING LOGIC ---
@@ -252,12 +261,10 @@
       } else if (tabId === 'finance') {
         document.getElementById('viewFinance').classList.remove('hidden');
         document.getElementById('tabBtnFinance').classList.add('bg-indigo-600', 'text-white');
-        populateFinanceDropdown();
       }
       renderAll();
     }
 
-    // --- AUDIO CHIME ---
     function playDeliveryChime() {
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -278,6 +285,7 @@
         id: 'item_' + Date.now(),
         name: document.getElementById('itemName').value,
         price: parseFloat(document.getElementById('itemPrice').value),
+        url: document.getElementById('itemUrl').value,
         image: document.getElementById('itemImage').value || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80',
         coolingDays: parseInt(document.getElementById('coolingPeriod').value),
         reason: document.getElementById('itemReason').value,
@@ -297,12 +305,27 @@
     function resolveItem(id, outcome) {
       const item = items.find(i => i.id === id);
       if (!item) return;
-      if (outcome === 'saved') savedTotal += item.price;
+      
+      if (outcome === 'saved') {
+        savedTotal += item.price;
+      } else if (outcome === 'bought') {
+        // Feature: Redirect to original product page
+        if (item.url) window.open(item.url, '_blank');
+      }
+      
       items = items.filter(i => i.id !== id);
+      
+      // Clear finance plan if the purchased/deleted item was the active goal
+      if (financePlan && financePlan.itemId === id) financePlan = null;
+      
       saveState(); renderAll();
     }
 
-    function removeItem(id) { items = items.filter(i => i.id !== id); saveState(); renderAll(); }
+    function removeItem(id) { 
+      items = items.filter(i => i.id !== id); 
+      if (financePlan && financePlan.itemId === id) financePlan = null;
+      saveState(); renderAll(); 
+    }
 
     function fastForward(days) {
       items.forEach(item => { if (item.shippedAt) item.shippedAt -= (days * 24 * 60 * 60 * 1000); });
@@ -331,64 +354,97 @@
       saveState(); renderAll();
     }
 
-    // --- FINANCE LOGIC (DYNAMIC MILESTONE) ---
-    function populateFinanceDropdown() {
-      const select = document.getElementById('financeTargetItem');
-      select.innerHTML = '<option value="">-- Choose an item --</option>';
-      items.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item.id;
-        opt.textContent = `${item.name} ($${item.price.toFixed(2)})`;
-        select.appendChild(opt);
-      });
-      calculateFinance();
-    }
-
-    function calculateFinance() {
+    // --- FINANCE LOGIC ---
+    function saveFinancePlan() {
       const targetId = document.getElementById('financeTargetItem').value;
       const targetMonths = parseInt(document.getElementById('financeMonths').value) || 1;
-      const resDiv = document.getElementById('financeResult');
+      if (!targetId) return;
       
-      if (!targetId) { resDiv.classList.add('hidden'); return; }
-      
-      const item = items.find(i => i.id === targetId);
-      if (!item) return;
+      financePlan = {
+        itemId: targetId,
+        months: targetMonths,
+        startedAt: Date.now()
+      };
+      saveState(); renderAll();
+    }
 
-      const spentThisMonth = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-      const remainingBudget = Math.max(0, monthlyBudget - spentThisMonth);
-      
-      const requiredPerMonth = item.price / targetMonths;
-      
-      let dynamicText = "";
-      let isOnTrack = true;
+    function clearFinancePlan() {
+      financePlan = null;
+      saveState(); renderAll();
+    }
 
-      if (remainingBudget >= requiredPerMonth) {
-        dynamicText = `<div class="bg-emerald-950/40 border border-emerald-500/50 rounded-xl p-4 mt-4 text-emerald-200 text-sm">
-          <i class="fa-solid fa-circle-check mr-2"></i> You are on track! Based on your current spending, you have $${remainingBudget.toFixed(2)} available this month, which covers your goal of $${requiredPerMonth.toFixed(2)}/mo.
-        </div>`;
+    function renderFinanceTab() {
+      const createView = document.getElementById('financeCreateView');
+      const activeView = document.getElementById('financeActiveView');
+
+      if (!financePlan) {
+        createView.classList.remove('hidden');
+        activeView.classList.add('hidden');
+        
+        const select = document.getElementById('financeTargetItem');
+        select.innerHTML = '<option value="">-- Choose an item from your cart --</option>';
+        items.forEach(item => {
+          const opt = document.createElement('option');
+          opt.value = item.id;
+          opt.textContent = `${item.name} ($${item.price.toFixed(2)})`;
+          select.appendChild(opt);
+        });
       } else {
-        isOnTrack = false;
-        const actualMonthsNeeded = remainingBudget > 0 ? Math.ceil(item.price / remainingBudget) : "Forever";
-        dynamicText = `<div class="bg-rose-950/40 border border-rose-500/50 rounded-xl p-4 mt-4 text-rose-200 text-sm">
-          <i class="fa-solid fa-triangle-exclamation mr-2"></i> <strong>Reality Check:</strong> You want to save $${requiredPerMonth.toFixed(2)}/mo, but you only have $${remainingBudget.toFixed(2)} left in your budget this month due to spending.<br><br>
-          At your current spending rate, it will actually take you <strong>${actualMonthsNeeded} months</strong> to save for this, not ${targetMonths}.
-        </div>`;
-      }
+        createView.classList.add('hidden');
+        activeView.classList.remove('hidden');
+        
+        const item = items.find(i => i.id === financePlan.itemId);
+        if (!item) {
+          clearFinancePlan(); // Auto-clear if item no longer exists
+          return;
+        }
 
-      resDiv.innerHTML = `
-        <div class="grid grid-cols-2 gap-4">
-          <div class="bg-slate-950 border border-slate-700 rounded-xl p-4 text-center">
-            <p class="text-xs text-slate-400 mb-1">Target Savings</p>
-            <p class="text-2xl font-bold text-indigo-400">$${requiredPerMonth.toFixed(2)} <span class="text-sm font-normal text-slate-500">/ mo</span></p>
+        const spentThisMonth = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const remainingBudget = Math.max(0, monthlyBudget - spentThisMonth);
+        const requiredPerMonth = item.price / financePlan.months;
+
+        let statusHtml = "";
+        if (remainingBudget >= requiredPerMonth) {
+           statusHtml = `<div class="bg-emerald-950/40 border border-emerald-500/50 rounded-xl p-4 text-emerald-200 text-sm">
+             <i class="fa-solid fa-circle-check mr-2"></i> <strong>On Track!</strong> You have $${remainingBudget.toFixed(2)} remaining in your budget this month, which easily covers your goal of $${requiredPerMonth.toFixed(2)}/mo.
+           </div>`;
+        } else {
+           const actualMonthsNeeded = remainingBudget > 0 ? Math.ceil(item.price / remainingBudget) : "Forever";
+           statusHtml = `<div class="bg-rose-950/40 border border-rose-500/50 rounded-xl p-4 text-rose-200 text-sm">
+             <i class="fa-solid fa-triangle-exclamation mr-2"></i> <strong>Falling Behind!</strong> You need $${requiredPerMonth.toFixed(2)}/mo, but only have $${remainingBudget.toFixed(2)} left. At your current spending rate, it will take you <strong>${actualMonthsNeeded} months</strong> to save for this instead of ${financePlan.months}.
+           </div>`;
+        }
+
+        activeView.innerHTML = `
+          <h2 class="text-xl font-bold text-white mb-2"><i class="fa-solid fa-bullseye text-indigo-400"></i> Active Savings Goal</h2>
+          
+          <div class="flex gap-4 items-center mt-4 mb-6 bg-slate-950 p-4 rounded-xl border border-slate-800">
+             <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-16 h-16 rounded-lg object-cover bg-slate-800" />
+             <div>
+               <h3 class="font-bold text-slate-100">${item.name}</h3>
+               <p class="text-indigo-400 font-bold">$${item.price.toFixed(2)}</p>
+               <p class="text-xs text-slate-400">Target Timeframe: ${financePlan.months} months</p>
+             </div>
           </div>
-          <div class="bg-slate-950 border ${isOnTrack ? 'border-emerald-700' : 'border-rose-700'} rounded-xl p-4 text-center">
-            <p class="text-xs text-slate-400 mb-1">Available Savings</p>
-            <p class="text-2xl font-bold ${isOnTrack ? 'text-emerald-400' : 'text-rose-400'}">$${remainingBudget.toFixed(2)} <span class="text-sm font-normal text-slate-500">/ mo</span></p>
+          
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-slate-950 border border-slate-700 rounded-xl p-4 text-center">
+              <p class="text-xs text-slate-400 mb-1">Target Savings</p>
+              <p class="text-2xl font-bold text-indigo-400">$${requiredPerMonth.toFixed(2)} <span class="text-sm font-normal text-slate-500">/ mo</span></p>
+            </div>
+            <div class="bg-slate-950 border ${remainingBudget >= requiredPerMonth ? 'border-emerald-700' : 'border-rose-700'} rounded-xl p-4 text-center">
+              <p class="text-xs text-slate-400 mb-1">Available Savings</p>
+              <p class="text-2xl font-bold ${remainingBudget >= requiredPerMonth ? 'text-emerald-400' : 'text-rose-400'}">$${remainingBudget.toFixed(2)} <span class="text-sm font-normal text-slate-500">/ mo</span></p>
+            </div>
           </div>
-        </div>
-        ${dynamicText}
-      `;
-      resDiv.classList.remove('hidden');
+          
+          ${statusHtml}
+          
+          <div class="mt-6 text-right">
+            <button onclick="clearFinancePlan()" class="text-xs text-slate-400 hover:text-rose-400 transition underline decoration-slate-600 underline-offset-4">Cancel Goal</button>
+          </div>
+        `;
+      }
     }
 
     // --- RENDER EVERYTHING ---
@@ -408,14 +464,14 @@
       if (cartItems.length === 0) cartList.innerHTML = `<div class="p-6 border border-dashed border-slate-800 rounded-2xl text-center text-slate-500 text-xs">Waiting cart is empty.</div>`;
       else cartList.innerHTML = cartItems.map(item => `
         <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex justify-between gap-4">
-          <div class="flex gap-3">
-            <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-12 h-12 rounded-lg object-cover bg-slate-800" />
-            <div>
-              <h4 class="font-medium text-slate-100 text-sm">${item.name}</h4>
+          <div class="flex gap-3 overflow-hidden">
+            <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-12 h-12 rounded-lg object-cover bg-slate-800 flex-shrink-0" />
+            <div class="overflow-hidden">
+              <h4 class="font-medium text-slate-100 text-sm truncate">${item.name}</h4>
               <span class="text-xs font-semibold text-emerald-400">$${item.price.toFixed(2)}</span>
             </div>
           </div>
-          <div class="flex flex-col gap-2 justify-center">
+          <div class="flex flex-col gap-2 justify-center flex-shrink-0">
             <button onclick="startShipping('${item.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-md">Ship (${item.coolingDays}d)</button>
             <button onclick="removeItem('${item.id}')" class="text-[11px] text-slate-500 hover:text-rose-400">Delete</button>
           </div>
@@ -435,21 +491,26 @@
           if (isDelivered && !item.hasChimed) { item.hasChimed = true; chimeTriggered = true; saveState(); }
 
           return `
-            <div class="bg-slate-900 border ${isDelivered ? 'border-indigo-500/50' : 'border-slate-800'} rounded-2xl p-5 shadow-lg space-y-4">
+            <div class="bg-slate-900 border ${isDelivered ? 'border-indigo-500/50 ring-1 ring-indigo-500/30' : 'border-slate-800'} rounded-2xl p-5 shadow-lg space-y-4">
               <div class="flex justify-between gap-3">
-                <div class="flex gap-3">
-                  <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-12 h-12 rounded-lg object-cover bg-slate-800" />
-                  <div><h3 class="font-bold text-slate-100 text-sm">${item.name}</h3><p class="text-[11px] text-slate-400">Trk: ${item.id.toUpperCase()}</p></div>
+                <div class="flex gap-3 overflow-hidden">
+                  <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-12 h-12 rounded-lg object-cover bg-slate-800 flex-shrink-0" />
+                  <div class="overflow-hidden">
+                    <h3 class="font-bold text-slate-100 text-sm truncate">${item.name}</h3>
+                    <p class="text-[11px] text-slate-400">Trk: ${item.id.toUpperCase()}</p>
+                  </div>
                 </div>
-                <div class="text-right"><div class="text-xs font-bold text-emerald-400">$${item.price.toFixed(2)}</div></div>
+                <div class="text-right flex-shrink-0"><div class="text-xs font-bold text-emerald-400">$${item.price.toFixed(2)}</div></div>
               </div>
               <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
                 <div class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full" style="width: ${pct}%"></div>
               </div>
               ${isDelivered ? `
                 <div class="pt-3 border-t border-slate-800/80 flex justify-between gap-3 bg-indigo-950/20 p-3 rounded-xl">
-                  <button onclick="resolveItem('${item.id}', 'saved')" class="bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">🎉 Changed Mind (Save)</button>
-                  <button onclick="resolveItem('${item.id}', 'bought')" class="bg-slate-800 text-slate-300 text-xs px-3 py-1.5 rounded-lg">Still Want (Buy)</button>
+                  <button onclick="resolveItem('${item.id}', 'saved')" class="bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex-1">🎉 Save Money</button>
+                  <button onclick="resolveItem('${item.id}', 'bought')" class="bg-slate-800 text-slate-300 border border-slate-700 text-xs px-3 py-1.5 rounded-lg flex-1 flex items-center justify-center gap-2">
+                    Buy <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                  </button>
                 </div>
               ` : ''}
             </div>
@@ -478,9 +539,9 @@
         </div>
       `).join('');
 
-      // Update finance calculation if on that tab
+      // 4. Update Finance UI
       if (!document.getElementById('viewFinance').classList.contains('hidden')) {
-        calculateFinance();
+        renderFinanceTab();
       }
     }
 
