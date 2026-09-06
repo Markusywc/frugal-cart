@@ -157,7 +157,6 @@
             <p class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Remaining Budget</p>
             <p id="uiRemaining" class="text-3xl font-bold text-emerald-400">$0.00</p>
           </div>
-          <!-- NEW: End Month Action -->
           <div class="col-span-2">
             <button onclick="endMonth()" class="w-full bg-slate-800 border border-slate-700 hover:bg-indigo-600 hover:border-indigo-500 hover:shadow-lg transition-all text-slate-300 hover:text-white py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2">
               <i class="fa-solid fa-calendar-check text-lg"></i> Close Month & Allocate Savings to Goals
@@ -362,7 +361,7 @@
       saveState(); renderAll();
     }
 
-    // --- WATERFALL ALLOCATION (NEW) ---
+    // --- WATERFALL ALLOCATION ---
     function endMonth() {
       const spentThisMonth = expenses.reduce((sum, exp) => sum + exp.amount, 0);
       let available = Math.max(0, monthlyBudget - spentThisMonth);
@@ -375,16 +374,13 @@
         return;
       }
 
-      // Find active goals and sort them by added date (oldest priority first)
       const goals = items.filter(i => i.financeGoal).sort((a, b) => a.addedAt - b.addedAt);
-      
       let allocatedTotal = 0;
 
       goals.forEach(item => {
         if (!item.financeGoal.accumulated) item.financeGoal.accumulated = 0;
         const needed = item.price - item.financeGoal.accumulated;
         
-        // Pour available money into the goal until it is full
         if (available > 0 && needed > 0) {
           const contribution = Math.min(available, needed);
           item.financeGoal.accumulated += contribution;
@@ -393,7 +389,7 @@
         }
       });
 
-      expenses = []; // Clear expenses for the new month
+      expenses = []; 
       saveState();
       renderAll();
       
@@ -409,8 +405,11 @@
       
       const item = items.find(i => i.id === targetId);
       if (item) {
-        item.financeGoal = { months: targetMonths, accumulated: 0 };
-        // Sync timeframe (approx 30 days per month)
+        item.financeGoal = { 
+          months: targetMonths, 
+          accumulated: 0,
+          startedAt: Date.now() // Track when it started for dynamic math
+        };
         item.coolingDays = targetMonths * 30;
       }
       saveState(); renderAll();
@@ -420,7 +419,7 @@
       const item = items.find(i => i.id === id);
       if (item) {
         delete item.financeGoal;
-        item.coolingDays = 7; // Reset back to standard
+        item.coolingDays = 7; 
       }
       saveState(); renderAll();
     }
@@ -452,11 +451,24 @@
         return;
       }
 
-      // Calculate Global Portfolio Math (Only tracking goals that still need money)
+      // Calculate Required Per Month Dynamically for Unfunded Goals
+      const now = new Date();
+      let totalRequiredPerMonth = 0;
+
+      unfundedGoals.forEach(item => {
+        const start = new Date(item.financeGoal.startedAt || Date.now());
+        const monthsPassed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+        // Minimum 1 month remaining to avoid division by zero
+        const remainingMonths = Math.max(1, item.financeGoal.months - monthsPassed);
+        const needed = item.price - (item.financeGoal.accumulated || 0);
+        
+        // Save the required amount directly on the item temporarily for rendering the card
+        item.tempRequired = needed / remainingMonths;
+        totalRequiredPerMonth += item.tempRequired;
+      });
+
       const spentThisMonth = expenses.reduce((sum, exp) => sum + exp.amount, 0);
       const remainingBudget = Math.max(0, monthlyBudget - spentThisMonth);
-      const totalRequiredPerMonth = unfundedGoals.reduce((sum, item) => sum + (item.price / item.financeGoal.months), 0);
-      
       const isGloballyOnTrack = remainingBudget >= totalRequiredPerMonth;
 
       globalSummary.classList.remove('hidden');
@@ -481,10 +493,18 @@
 
       // Render Individual Goal Cards
       activeList.innerHTML = activeGoals.map(item => {
-        const requiredPerMonth = item.price / item.financeGoal.months;
         const accumulated = item.financeGoal.accumulated || 0;
         const isFunded = accumulated >= item.price;
         const pct = Math.min(100, (accumulated / item.price) * 100);
+        
+        const start = new Date(item.financeGoal.startedAt || Date.now());
+        const monthsPassed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+        const remainingMonths = Math.max(1, item.financeGoal.months - monthsPassed);
+        
+        // Format the Target Date for display (e.g., "Mar 2027")
+        const targetDate = new Date(start);
+        targetDate.setMonth(targetDate.getMonth() + item.financeGoal.months);
+        const targetStr = targetDate.toLocaleDateString('default', { month: 'short', year: 'numeric' });
 
         return `
           <div class="bg-slate-900 border ${isFunded ? 'border-emerald-500/50' : 'border-slate-800'} rounded-2xl p-5 shadow-xl relative">
@@ -493,11 +513,10 @@
                <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-14 h-14 rounded-lg object-cover bg-slate-800" />
                <div>
                  <h3 class="font-bold text-slate-100 text-sm line-clamp-1">${item.name}</h3>
-                 <p class="text-xs text-slate-400">Target Timeframe: ${item.financeGoal.months} months</p>
+                 <p class="text-xs text-slate-400">Target: ${targetStr} <span class="text-indigo-400/80">(${remainingMonths} mos left)</span></p>
                </div>
             </div>
             
-            <!-- Progress Bar -->
             <div class="mb-4">
               <div class="flex justify-between text-xs font-medium mb-1.5">
                 <span class="${isFunded ? 'text-emerald-400' : 'text-slate-300'}">
@@ -512,8 +531,8 @@
 
             ${!isFunded ? `
             <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
-              <div class="text-xs text-slate-400">Required Contribution:</div>
-              <div class="font-bold text-indigo-400 text-sm">$${requiredPerMonth.toFixed(2)} / mo</div>
+              <div class="text-xs text-slate-400">Dynamically Adjusted Contribution:</div>
+              <div class="font-bold text-indigo-400 text-sm">$${(item.tempRequired).toFixed(2)} / mo</div>
             </div>` : ''}
           </div>
         `;
@@ -522,10 +541,8 @@
 
     // --- RENDER EVERYTHING ---
     function renderAll() {
-      // 1. Header
       document.getElementById('totalSaved').textContent = `$${savedTotal.toFixed(2)}`;
       
-      // 2. Cart & Shipping UI
       items.sort((a, b) => b.addedAt - a.addedAt);
       const cartItems = items.filter(i => i.status === 'cart');
       const shippingItems = items.filter(i => i.status === 'shipping');
