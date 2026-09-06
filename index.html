@@ -10,7 +10,6 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-16">
 
-  <!-- Header -->
   <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-30">
     <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center space-x-3 w-full sm:w-auto">
@@ -28,7 +27,6 @@
       </div>
     </div>
     
-    <!-- TABS NAVIGATION -->
     <div class="max-w-6xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto no-scrollbar">
       <button id="tabBtnCart" onclick="switchTab('cart')" class="whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition bg-indigo-600 text-white shadow-md">
         <i class="fa-solid fa-cart-shopping mr-1"></i> Cooling Cart
@@ -44,9 +42,6 @@
 
   <main class="max-w-6xl mx-auto px-4 py-6">
 
-    <!-- ========================================= -->
-    <!-- VIEW 1: COOLING CART                      -->
-    <!-- ========================================= -->
     <div id="viewCart" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
       <div class="lg:col-span-4 space-y-6">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
@@ -100,7 +95,6 @@
       </div>
 
       <div class="lg:col-span-8 space-y-8">
-        <!-- READY TO CHECKOUT SECTION -->
         <section id="readySection" class="hidden">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-bold text-white flex items-center gap-2">
@@ -111,7 +105,6 @@
           <div id="readyList" class="space-y-4"></div>
         </section>
 
-        <!-- IN TRANSIT -->
         <section>
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-bold text-white flex items-center gap-2">
@@ -122,7 +115,6 @@
           <div id="shippingList" class="space-y-4"></div>
         </section>
 
-        <!-- WAITING CART -->
         <section>
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-bold text-white flex items-center gap-2">
@@ -135,9 +127,6 @@
       </div>
     </div>
 
-    <!-- ========================================= -->
-    <!-- VIEW 2: EXPENSE TRACKER                   -->
-    <!-- ========================================= -->
     <div id="viewExpenses" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
       <div class="lg:col-span-4 space-y-6">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
@@ -189,12 +178,8 @@
       </div>
     </div>
 
-    <!-- ========================================= -->
-    <!-- VIEW 3: FINANCING PORTFOLIO               -->
-    <!-- ========================================= -->
     <div id="viewFinance" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
       
-      <!-- ADD NEW GOAL -->
       <div class="lg:col-span-4 space-y-6">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
           <h2 class="text-lg font-bold text-white mb-2"><i class="fa-solid fa-bullseye text-indigo-400"></i> New Savings Goal</h2>
@@ -216,17 +201,12 @@
         </div>
       </div>
 
-      <!-- ACTIVE GOALS DASHBOARD -->
       <div class="lg:col-span-8 space-y-6">
-        <!-- Global Portfolio Summary -->
         <div id="financeGlobalSummary" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl grid grid-cols-2 gap-4">
-          <!-- Injected via JS -->
-        </div>
+          </div>
 
-        <!-- List of Active Goals -->
         <div id="financeActiveList" class="space-y-4">
-          <!-- Injected via JS -->
-        </div>
+          </div>
       </div>
 
     </div>
@@ -392,7 +372,10 @@
         return;
       }
 
-      const goals = items.filter(i => i.financeGoal && (i.financeGoal.accumulated || 0) < i.price).sort((a, b) => a.addedAt - b.addedAt);
+      // MODIFICATION: Sort purely by when the finance goal was created (startedAt), oldest first
+      const goals = items.filter(i => i.financeGoal && (i.financeGoal.accumulated || 0) < i.price)
+                         .sort((a, b) => a.financeGoal.startedAt - b.financeGoal.startedAt);
+                         
       let allocatedTotal = 0;
 
       goals.forEach(item => {
@@ -458,8 +441,9 @@
         });
       }
 
-      // MODIFICATION: Sort active goals strictly by oldest first (timestamp order) to match the waterfall
-      const activeGoals = items.filter(i => i.financeGoal).sort((a, b) => a.addedAt - b.addedAt);
+      // MODIFICATION: Sort active goals strictly by when the goal was created (startedAt), oldest first
+      const activeGoals = items.filter(i => i.financeGoal)
+                               .sort((a, b) => a.financeGoal.startedAt - b.financeGoal.startedAt);
       
       const unfundedGoals = activeGoals.filter(i => (i.financeGoal.accumulated || 0) < i.price);
       const globalSummary = document.getElementById('financeGlobalSummary');
