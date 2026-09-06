@@ -100,16 +100,34 @@
       </div>
 
       <div class="lg:col-span-8 space-y-8">
+        <!-- NEW: READY TO CHECKOUT SECTION -->
+        <section id="readySection" class="hidden">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-box-open text-emerald-400"></i> Ready to Checkout
+            </h2>
+            <span id="readyCount" class="text-xs bg-emerald-900/50 border border-emerald-500/50 text-emerald-300 px-2.5 py-0.5 rounded-full">0 items</span>
+          </div>
+          <div id="readyList" class="space-y-4"></div>
+        </section>
+
+        <!-- IN TRANSIT -->
         <section>
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-truck-fast text-emerald-400"></i> In Transit (Cooling-Off)</h2>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-truck-fast text-indigo-400"></i> In Transit (Cooling-Off)
+            </h2>
             <span id="shippingCount" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">0 items</span>
           </div>
           <div id="shippingList" class="space-y-4"></div>
         </section>
+
+        <!-- WAITING CART -->
         <section>
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-bag-shopping text-amber-400"></i> Waiting Cart</h2>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-bag-shopping text-amber-400"></i> Waiting Cart
+            </h2>
             <span id="cartCount" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">0 items</span>
           </div>
           <div id="cartList" class="space-y-3"></div>
@@ -374,7 +392,7 @@
         return;
       }
 
-      const goals = items.filter(i => i.financeGoal).sort((a, b) => a.addedAt - b.addedAt);
+      const goals = items.filter(i => i.financeGoal && (i.financeGoal.accumulated || 0) < i.price).sort((a, b) => a.addedAt - b.addedAt);
       let allocatedTotal = 0;
 
       goals.forEach(item => {
@@ -394,7 +412,7 @@
       renderAll();
       
       alert(`Month closed successfully! $${allocatedTotal.toFixed(2)} was securely allocated to your savings goals.`);
-      switchTab('finance');
+      switchTab('cart'); // Swapping to cart to let them see if a goal got fully promoted!
     }
 
     // --- FINANCE LOGIC ---
@@ -408,7 +426,7 @@
         item.financeGoal = { 
           months: targetMonths, 
           accumulated: 0,
-          startedAt: Date.now() // Track when it started for dynamic math
+          startedAt: Date.now() 
         };
         item.coolingDays = targetMonths * 30;
       }
@@ -426,7 +444,8 @@
 
     function renderFinanceTab() {
       const select = document.getElementById('financeTargetItem');
-      const availableItems = items.filter(i => !i.financeGoal);
+      // Fix: Filter out items that are already fully funded or currently tracked
+      const availableItems = items.filter(i => !i.financeGoal && !isItemReady(i));
       
       if (availableItems.length === 0) {
         select.innerHTML = '<option value="">-- No available items to track --</option>';
@@ -451,18 +470,15 @@
         return;
       }
 
-      // Calculate Required Per Month Dynamically for Unfunded Goals
       const now = new Date();
       let totalRequiredPerMonth = 0;
 
       unfundedGoals.forEach(item => {
         const start = new Date(item.financeGoal.startedAt || Date.now());
         const monthsPassed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
-        // Minimum 1 month remaining to avoid division by zero
         const remainingMonths = Math.max(1, item.financeGoal.months - monthsPassed);
         const needed = item.price - (item.financeGoal.accumulated || 0);
         
-        // Save the required amount directly on the item temporarily for rendering the card
         item.tempRequired = needed / remainingMonths;
         totalRequiredPerMonth += item.tempRequired;
       });
@@ -488,10 +504,9 @@
               : `<div class="bg-rose-950/40 border border-rose-500/30 rounded-xl p-3 text-rose-200 text-xs text-center"><i class="fa-solid fa-triangle-exclamation mr-1"></i> You are falling behind. You need $${(totalRequiredPerMonth - remainingBudget).toFixed(2)} more this month to stay on schedule.</div>`
             }
           </div>
-        ` : `<div class="col-span-2 mt-2 bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 text-emerald-200 text-xs text-center">🎉 All current goals are fully funded!</div>`}
+        ` : `<div class="col-span-2 mt-2 bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 text-emerald-200 text-xs text-center">🎉 All current goals are fully funded! Check your Cart to buy!</div>`}
       `;
 
-      // Render Individual Goal Cards
       activeList.innerHTML = activeGoals.map(item => {
         const accumulated = item.financeGoal.accumulated || 0;
         const isFunded = accumulated >= item.price;
@@ -501,7 +516,6 @@
         const monthsPassed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
         const remainingMonths = Math.max(1, item.financeGoal.months - monthsPassed);
         
-        // Format the Target Date for display (e.g., "Mar 2027")
         const targetDate = new Date(start);
         targetDate.setMonth(targetDate.getMonth() + item.financeGoal.months);
         const targetStr = targetDate.toLocaleDateString('default', { month: 'short', year: 'numeric' });
@@ -520,7 +534,7 @@
             <div class="mb-4">
               <div class="flex justify-between text-xs font-medium mb-1.5">
                 <span class="${isFunded ? 'text-emerald-400' : 'text-slate-300'}">
-                  ${isFunded ? '<i class="fa-solid fa-check-circle mr-1"></i> Fully Funded!' : `Saved: $${accumulated.toFixed(2)}`}
+                  ${isFunded ? '<i class="fa-solid fa-check-circle mr-1"></i> Fully Funded! See Cart.' : `Saved: $${accumulated.toFixed(2)}`}
                 </span>
                 <span class="text-slate-400">Goal: $${item.price.toFixed(2)}</span>
               </div>
@@ -539,20 +553,76 @@
       }).join('');
     }
 
+    // --- CHECK IF ITEM IS PROMOTED (NEW) ---
+    function isItemReady(item) {
+      if (item.financeGoal && item.financeGoal.accumulated >= item.price) return true;
+      if (item.status === 'shipping') {
+        const elapsed = Date.now() - item.shippedAt;
+        const total = item.coolingDays * 24 * 60 * 60 * 1000;
+        if (elapsed >= total) return true;
+      }
+      return false;
+    }
+
     // --- RENDER EVERYTHING ---
     function renderAll() {
       document.getElementById('totalSaved').textContent = `$${savedTotal.toFixed(2)}`;
       
       items.sort((a, b) => b.addedAt - a.addedAt);
-      const cartItems = items.filter(i => i.status === 'cart');
-      const shippingItems = items.filter(i => i.status === 'shipping');
+      
+      const readyItems = items.filter(i => isItemReady(i));
+      const cartItems = items.filter(i => i.status === 'cart' && !isItemReady(i));
+      const shippingItems = items.filter(i => i.status === 'shipping' && !isItemReady(i));
 
+      let chimeTriggered = false;
+
+      // 1. Ready To Checkout (PROMOTED ITEMS)
+      const readySection = document.getElementById('readySection');
+      const readyList = document.getElementById('readyList');
+      const readyCount = document.getElementById('readyCount');
+      
+      if (readyItems.length > 0) {
+        readySection.classList.remove('hidden');
+        readyCount.textContent = `${readyItems.length} items`;
+        readyList.innerHTML = readyItems.map(item => {
+          if (!item.hasChimed) { item.hasChimed = true; chimeTriggered = true; saveState(); }
+          
+          const isFinanced = item.financeGoal && item.financeGoal.accumulated >= item.price;
+          const statusText = isFinanced 
+             ? '<span class="text-emerald-400"><i class="fa-solid fa-piggy-bank mr-1"></i> Goal Fully Funded</span>' 
+             : '<span class="text-emerald-400"><i class="fa-solid fa-clock mr-1"></i> Cooling Period Complete</span>';
+
+          return `
+            <div class="bg-slate-900 border border-emerald-500/50 ring-1 ring-emerald-500/30 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="flex justify-between gap-3">
+                <div class="flex gap-3 overflow-hidden">
+                  <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-12 h-12 rounded-lg object-cover bg-slate-800 flex-shrink-0" />
+                  <div class="overflow-hidden">
+                    <h3 class="font-bold text-slate-100 text-sm truncate">${item.name}</h3>
+                    <p class="text-[11px] text-slate-400">${statusText}</p>
+                  </div>
+                </div>
+                <div class="text-right flex-shrink-0"><div class="text-xs font-bold text-emerald-400">$${item.price.toFixed(2)}</div></div>
+              </div>
+              <div class="pt-3 border-t border-slate-800/80 flex justify-between gap-3 bg-emerald-950/20 p-3 rounded-xl">
+                <button onclick="resolveItem('${item.id}', 'saved')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex-1 transition">🎉 Save Money Instead</button>
+                <button onclick="resolveItem('${item.id}', 'bought')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs px-3 py-1.5 rounded-lg flex-1 flex items-center justify-center gap-2 transition">
+                  Buy Now <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        readySection.classList.add('hidden');
+        readyList.innerHTML = '';
+      }
+
+      // 2. Cart UI
       document.getElementById('cartCount').textContent = `${cartItems.length} items`;
-      document.getElementById('shippingCount').textContent = `${shippingItems.length} items`;
-
-      const cartList = document.getElementById('cartList');
-      if (cartItems.length === 0) cartList.innerHTML = `<div class="p-6 border border-dashed border-slate-800 rounded-2xl text-center text-slate-500 text-xs">Waiting cart is empty.</div>`;
-      else cartList.innerHTML = cartItems.map(item => `
+      const cartListEl = document.getElementById('cartList');
+      if (cartItems.length === 0) cartListEl.innerHTML = `<div class="p-6 border border-dashed border-slate-800 rounded-2xl text-center text-slate-500 text-xs">Waiting cart is empty.</div>`;
+      else cartListEl.innerHTML = cartItems.map(item => `
         <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex justify-between gap-4">
           <div class="flex gap-3 overflow-hidden">
             <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-12 h-12 rounded-lg object-cover bg-slate-800 flex-shrink-0" />
@@ -568,20 +638,18 @@
         </div>
       `).join('');
 
-      const shippingList = document.getElementById('shippingList');
-      if (shippingItems.length === 0) shippingList.innerHTML = `<div class="p-8 border border-dashed border-slate-800 rounded-2xl text-center text-slate-500 text-xs">No active packages cooling off.</div>`;
+      // 3. Shipping UI (Only uncompleted ones)
+      document.getElementById('shippingCount').textContent = `${shippingItems.length} items`;
+      const shippingListEl = document.getElementById('shippingList');
+      if (shippingItems.length === 0) shippingListEl.innerHTML = `<div class="p-8 border border-dashed border-slate-800 rounded-2xl text-center text-slate-500 text-xs">No active packages cooling off.</div>`;
       else {
-        let chimeTriggered = false;
-        shippingList.innerHTML = shippingItems.map(item => {
+        shippingListEl.innerHTML = shippingItems.map(item => {
           const elapsed = Date.now() - item.shippedAt;
           const total = item.coolingDays * 24 * 60 * 60 * 1000;
-          const pct = Math.min(100, Math.round((elapsed / total) * 100));
-          const isDelivered = pct >= 100;
-          
-          if (isDelivered && !item.hasChimed) { item.hasChimed = true; chimeTriggered = true; saveState(); }
+          const pct = Math.max(0, Math.min(99, Math.round((elapsed / total) * 100)));
 
           return `
-            <div class="bg-slate-900 border ${isDelivered ? 'border-indigo-500/50 ring-1 ring-indigo-500/30' : 'border-slate-800'} rounded-2xl p-5 shadow-lg space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
               <div class="flex justify-between gap-3">
                 <div class="flex gap-3 overflow-hidden">
                   <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-12 h-12 rounded-lg object-cover bg-slate-800 flex-shrink-0" />
@@ -595,21 +663,14 @@
               <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
                 <div class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full transition-all duration-500" style="width: ${pct}%"></div>
               </div>
-              ${isDelivered ? `
-                <div class="pt-3 border-t border-slate-800/80 flex justify-between gap-3 bg-indigo-950/20 p-3 rounded-xl">
-                  <button onclick="resolveItem('${item.id}', 'saved')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex-1 transition">🎉 Save Money</button>
-                  <button onclick="resolveItem('${item.id}', 'bought')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs px-3 py-1.5 rounded-lg flex-1 flex items-center justify-center gap-2 transition">
-                    Buy <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                  </button>
-                </div>
-              ` : ''}
             </div>
           `;
         }).join('');
-        if (chimeTriggered) playDeliveryChime();
       }
 
-      // 3. Expenses UI
+      if (chimeTriggered) playDeliveryChime();
+
+      // 4. Expenses UI
       const spentThisMonth = expenses.reduce((sum, exp) => sum + exp.amount, 0);
       document.getElementById('uiSpent').textContent = `$${spentThisMonth.toFixed(2)}`;
       document.getElementById('uiRemaining').textContent = `$${Math.max(0, monthlyBudget - spentThisMonth).toFixed(2)}`;
@@ -629,7 +690,7 @@
         </div>
       `).join('');
 
-      // 4. Update Finance UI
+      // 5. Update Finance UI
       if (!document.getElementById('viewFinance').classList.contains('hidden')) {
         renderFinanceTab();
       }
