@@ -157,6 +157,12 @@
             <p class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Remaining Budget</p>
             <p id="uiRemaining" class="text-3xl font-bold text-emerald-400">$0.00</p>
           </div>
+          <!-- NEW: End Month Action -->
+          <div class="col-span-2">
+            <button onclick="endMonth()" class="w-full bg-slate-800 border border-slate-700 hover:bg-indigo-600 hover:border-indigo-500 hover:shadow-lg transition-all text-slate-300 hover:text-white py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2">
+              <i class="fa-solid fa-calendar-check text-lg"></i> Close Month & Allocate Savings to Goals
+            </button>
+          </div>
         </div>
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
@@ -232,7 +238,6 @@
     }
 
     // --- DATA STATE (Local Storage) ---
-    // Note: finance goals are now attached directly to individual items inside the `items` array!
     let items = JSON.parse(localStorage.getItem('frugal_items')) || [];
     let savedTotal = parseFloat(localStorage.getItem('frugal_saved_total')) || 0;
     
@@ -302,7 +307,6 @@
         addedAt: Date.now(),
         shippedAt: null,
         hasChimed: false
-        // financeGoal is null by default until added in the Finance tab
       });
       saveState(); document.getElementById('itemForm').reset(); renderAll();
     });
@@ -322,7 +326,6 @@
         if (item.url) window.open(item.url, '_blank');
       }
       
-      // When resolved, it removes the item (and inherently its active finance goal)
       items = items.filter(i => i.id !== id);
       saveState(); renderAll();
     }
@@ -359,7 +362,46 @@
       saveState(); renderAll();
     }
 
-    // --- FINANCE LOGIC (MULTI-GOAL) ---
+    // --- WATERFALL ALLOCATION (NEW) ---
+    function endMonth() {
+      const spentThisMonth = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+      let available = Math.max(0, monthlyBudget - spentThisMonth);
+
+      if (available <= 0) {
+        alert("No savings left this month to allocate. Better luck next month!");
+        expenses = [];
+        saveState();
+        renderAll();
+        return;
+      }
+
+      // Find active goals and sort them by added date (oldest priority first)
+      const goals = items.filter(i => i.financeGoal).sort((a, b) => a.addedAt - b.addedAt);
+      
+      let allocatedTotal = 0;
+
+      goals.forEach(item => {
+        if (!item.financeGoal.accumulated) item.financeGoal.accumulated = 0;
+        const needed = item.price - item.financeGoal.accumulated;
+        
+        // Pour available money into the goal until it is full
+        if (available > 0 && needed > 0) {
+          const contribution = Math.min(available, needed);
+          item.financeGoal.accumulated += contribution;
+          available -= contribution;
+          allocatedTotal += contribution;
+        }
+      });
+
+      expenses = []; // Clear expenses for the new month
+      saveState();
+      renderAll();
+      
+      alert(`Month closed successfully! $${allocatedTotal.toFixed(2)} was securely allocated to your savings goals.`);
+      switchTab('finance');
+    }
+
+    // --- FINANCE LOGIC ---
     function saveFinancePlan() {
       const targetId = document.getElementById('financeTargetItem').value;
       const targetMonths = parseInt(document.getElementById('financeMonths').value) || 1;
@@ -367,8 +409,8 @@
       
       const item = items.find(i => i.id === targetId);
       if (item) {
-        item.financeGoal = { months: targetMonths };
-        // Sync: Overwrite the cooling-off days to match the financing timeframe (using 30 days/mo average)
+        item.financeGoal = { months: targetMonths, accumulated: 0 };
+        // Sync timeframe (approx 30 days per month)
         item.coolingDays = targetMonths * 30;
       }
       saveState(); renderAll();
@@ -378,14 +420,13 @@
       const item = items.find(i => i.id === id);
       if (item) {
         delete item.financeGoal;
-        item.coolingDays = 7; // Reset to a standard 7-day cooling off if plan is cancelled
+        item.coolingDays = 7; // Reset back to standard
       }
       saveState(); renderAll();
     }
 
     function renderFinanceTab() {
       const select = document.getElementById('financeTargetItem');
-      // Only show items that don't already have a finance goal
       const availableItems = items.filter(i => !i.financeGoal);
       
       if (availableItems.length === 0) {
@@ -401,6 +442,7 @@
       }
 
       const activeGoals = items.filter(i => i.financeGoal);
+      const unfundedGoals = activeGoals.filter(i => (i.financeGoal.accumulated || 0) < i.price);
       const globalSummary = document.getElementById('financeGlobalSummary');
       const activeList = document.getElementById('financeActiveList');
 
@@ -410,49 +452,69 @@
         return;
       }
 
-      // Calculate Global Portfolio Math
+      // Calculate Global Portfolio Math (Only tracking goals that still need money)
       const spentThisMonth = expenses.reduce((sum, exp) => sum + exp.amount, 0);
       const remainingBudget = Math.max(0, monthlyBudget - spentThisMonth);
-      const totalRequiredPerMonth = activeGoals.reduce((sum, item) => sum + (item.price / item.financeGoal.months), 0);
+      const totalRequiredPerMonth = unfundedGoals.reduce((sum, item) => sum + (item.price / item.financeGoal.months), 0);
       
       const isGloballyOnTrack = remainingBudget >= totalRequiredPerMonth;
 
-      // Render Global Summary
       globalSummary.classList.remove('hidden');
       globalSummary.innerHTML = `
         <div class="text-center border-r border-slate-800">
-          <p class="text-[11px] text-slate-400 uppercase tracking-wider mb-1">Total Target Savings</p>
+          <p class="text-[11px] text-slate-400 uppercase tracking-wider mb-1">Target Savings</p>
           <p class="text-2xl font-bold text-indigo-400">$${totalRequiredPerMonth.toFixed(2)} <span class="text-xs font-normal text-slate-500">/ mo</span></p>
         </div>
         <div class="text-center">
           <p class="text-[11px] text-slate-400 uppercase tracking-wider mb-1">Available Savings</p>
           <p class="text-2xl font-bold ${isGloballyOnTrack ? 'text-emerald-400' : 'text-rose-400'}">$${remainingBudget.toFixed(2)} <span class="text-xs font-normal text-slate-500">/ mo</span></p>
         </div>
-        <div class="col-span-2 mt-2">
-          ${isGloballyOnTrack 
-            ? `<div class="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 text-emerald-200 text-xs text-center"><i class="fa-solid fa-circle-check mr-1"></i> You are on track to fund all your goals!</div>`
-            : `<div class="bg-rose-950/40 border border-rose-500/30 rounded-xl p-3 text-rose-200 text-xs text-center"><i class="fa-solid fa-triangle-exclamation mr-1"></i> You are falling behind. You need $${(totalRequiredPerMonth - remainingBudget).toFixed(2)} more this month to stay on schedule.</div>`
-          }
-        </div>
+        ${unfundedGoals.length > 0 ? `
+          <div class="col-span-2 mt-2">
+            ${isGloballyOnTrack 
+              ? `<div class="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 text-emerald-200 text-xs text-center"><i class="fa-solid fa-circle-check mr-1"></i> You are on track to fund all your goals!</div>`
+              : `<div class="bg-rose-950/40 border border-rose-500/30 rounded-xl p-3 text-rose-200 text-xs text-center"><i class="fa-solid fa-triangle-exclamation mr-1"></i> You are falling behind. You need $${(totalRequiredPerMonth - remainingBudget).toFixed(2)} more this month to stay on schedule.</div>`
+            }
+          </div>
+        ` : `<div class="col-span-2 mt-2 bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 text-emerald-200 text-xs text-center">🎉 All current goals are fully funded!</div>`}
       `;
 
       // Render Individual Goal Cards
       activeList.innerHTML = activeGoals.map(item => {
         const requiredPerMonth = item.price / item.financeGoal.months;
+        const accumulated = item.financeGoal.accumulated || 0;
+        const isFunded = accumulated >= item.price;
+        const pct = Math.min(100, (accumulated / item.price) * 100);
+
         return `
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl relative">
+          <div class="bg-slate-900 border ${isFunded ? 'border-emerald-500/50' : 'border-slate-800'} rounded-2xl p-5 shadow-xl relative">
             <button onclick="clearFinancePlan('${item.id}')" class="absolute top-4 right-4 text-slate-500 hover:text-rose-400 transition text-xs underline decoration-slate-600 underline-offset-4" title="Cancel Goal">Cancel Goal</button>
-            <div class="flex gap-4 items-center mb-4 pr-16">
-               <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-12 h-12 rounded-lg object-cover bg-slate-800" />
+            <div class="flex gap-4 items-center mb-5 pr-16">
+               <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-14 h-14 rounded-lg object-cover bg-slate-800" />
                <div>
                  <h3 class="font-bold text-slate-100 text-sm line-clamp-1">${item.name}</h3>
-                 <p class="text-xs text-slate-400">Timeframe: ${item.financeGoal.months} months <span class="text-indigo-400/70">(Timer synced)</span></p>
+                 <p class="text-xs text-slate-400">Target Timeframe: ${item.financeGoal.months} months</p>
                </div>
             </div>
-            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
-              <div class="text-xs text-slate-400">Monthly Contribution Required:</div>
-              <div class="font-bold text-indigo-400 text-sm">$${requiredPerMonth.toFixed(2)} / mo</div>
+            
+            <!-- Progress Bar -->
+            <div class="mb-4">
+              <div class="flex justify-between text-xs font-medium mb-1.5">
+                <span class="${isFunded ? 'text-emerald-400' : 'text-slate-300'}">
+                  ${isFunded ? '<i class="fa-solid fa-check-circle mr-1"></i> Fully Funded!' : `Saved: $${accumulated.toFixed(2)}`}
+                </span>
+                <span class="text-slate-400">Goal: $${item.price.toFixed(2)}</span>
+              </div>
+              <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                <div class="bg-gradient-to-r ${isFunded ? 'from-emerald-500 to-teal-400' : 'from-indigo-500 to-purple-400'} h-full transition-all duration-500" style="width: ${pct}%"></div>
+              </div>
             </div>
+
+            ${!isFunded ? `
+            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <div class="text-xs text-slate-400">Required Contribution:</div>
+              <div class="font-bold text-indigo-400 text-sm">$${requiredPerMonth.toFixed(2)} / mo</div>
+            </div>` : ''}
           </div>
         `;
       }).join('');
