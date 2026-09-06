@@ -3,23 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FrugalCart - Anti-Impulse Delivery Simulator</title>
+  <title>FrugalCart - Anti-Impulse & Finance Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  
-  <!-- PWA Manifest for Android Install/Share -->
   <link rel="manifest" href="manifest.json">
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-16">
 
   <!-- Header -->
   <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-30">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center space-x-3">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-3 w-full sm:w-auto">
         <span class="text-3xl">📦</span>
         <div>
           <h1 class="text-xl font-bold tracking-tight text-white">FrugalCart</h1>
-          <p class="text-xs text-slate-400">Impulse Deterrent & Cooling-Off Tracker</p>
+          <p class="text-xs text-slate-400">Impulse Deterrent & Finance Tracker</p>
         </div>
       </div>
       <div class="flex items-center gap-3">
@@ -29,142 +27,237 @@
         </div>
       </div>
     </div>
+    
+    <!-- TABS NAVIGATION -->
+    <div class="max-w-6xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto no-scrollbar">
+      <button id="tabBtnCart" onclick="switchTab('cart')" class="whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition bg-indigo-600 text-white shadow-md">
+        <i class="fa-solid fa-cart-shopping mr-1"></i> Cooling Cart
+      </button>
+      <button id="tabBtnExpenses" onclick="switchTab('expenses')" class="whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700">
+        <i class="fa-solid fa-wallet mr-1"></i> Expense Tracker
+      </button>
+      <button id="tabBtnFinance" onclick="switchTab('finance')" class="whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700">
+        <i class="fa-solid fa-bullseye mr-1"></i> Financing Plan
+      </button>
+    </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-    
-    <!-- LEFT COLUMN: Product Input Form -->
-    <div class="lg:col-span-4 space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <h2 class="text-lg font-semibold text-white mb-1 flex items-center gap-2">
-          <i class="fa-solid fa-cart-plus text-indigo-400"></i> Log an Impulse
-        </h2>
-        <p class="text-xs text-slate-400 mb-4">Caught yourself wanting to buy something? Park it here first.</p>
+  <main class="max-w-6xl mx-auto px-4 py-6">
 
-        <form id="itemForm" class="space-y-4">
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Product Title *</label>
-            <input type="text" id="itemName" required placeholder="e.g. Sony WH-1000XM5 Headphones"
-              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+    <!-- ========================================= -->
+    <!-- VIEW 1: COOLING CART (Original App)       -->
+    <!-- ========================================= -->
+    <div id="viewCart" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div class="lg:col-span-4 space-y-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+          <h2 class="text-lg font-semibold text-white mb-1 flex items-center gap-2">
+            <i class="fa-solid fa-cart-plus text-indigo-400"></i> Log an Impulse
+          </h2>
+          <form id="itemForm" class="space-y-4 mt-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Product Title *</label>
+              <input type="text" id="itemName" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Price ($) *</label>
+              <input type="number" step="0.01" id="itemPrice" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Image URL or Link</label>
+              <input type="url" id="itemImage" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Cooling-Off Period (Days)</label>
+              <select id="coolingPeriod" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                <option value="3">3 Days (Small)</option>
+                <option value="7" selected>7 Days (Standard)</option>
+                <option value="14">14 Days (Substantial)</option>
+                <option value="30">30 Days (Major)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Why do I want this? *</label>
+              <textarea id="itemReason" required rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"></textarea>
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
+              <i class="fa-solid fa-plus"></i> Add to Waiting Cart
+            </button>
+          </form>
+        </div>
+        <!-- Time skip buttons for testing -->
+        <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 text-xs text-slate-400">
+          <p class="font-semibold text-slate-300 mb-2"><i class="fa-solid fa-wrench text-amber-400"></i> Testing Tools</p>
+          <div class="flex gap-2">
+            <button onclick="fastForward(1)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-1.5 px-2 rounded-lg transition">⏩ +1 Day</button>
+            <button onclick="fastForward(7)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-1.5 px-2 rounded-lg transition">⏩ +7 Days</button>
           </div>
-
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Price ($) *</label>
-            <input type="number" step="0.01" id="itemPrice" required placeholder="149.99"
-              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Image URL or Website Link</label>
-            <input type="url" id="itemImage" placeholder="https://..."
-              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Cooling-Off Period (Days)</label>
-            <select id="coolingPeriod" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-              <option value="3">3 Days (Small impulse)</option>
-              <option value="7" selected>7 Days (Standard cooling)</option>
-              <option value="14">14 Days (Substantial purchase)</option>
-              <option value="30">30 Days (Major splurge)</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Why do I want this right now? *</label>
-            <textarea id="itemReason" required rows="2" placeholder="e.g. Saw it on social media, thought it looked cool..."
-              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
-          </div>
-
-          <button type="submit"
-            class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white text-sm font-semibold py-2.5 rounded-xl transition duration-150 flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
-            <i class="fa-solid fa-plus"></i> Add to Waiting Cart
-          </button>
-        </form>
+        </div>
       </div>
 
-      <!-- Quick Tester Box -->
-      <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 text-xs text-slate-400">
-        <p class="font-semibold text-slate-300 mb-2 flex items-center gap-1.5">
-          <i class="fa-solid fa-wrench text-amber-400"></i> Testing Tools
-        </p>
-        <div class="flex gap-2">
-          <button onclick="fastForward(1)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-center transition">⏩ +1 Day</button>
-          <button onclick="fastForward(7)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-center transition">⏩ +7 Days</button>
+      <div class="lg:col-span-8 space-y-8">
+        <section>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-truck-fast text-emerald-400"></i> In Transit (Cooling-Off)</h2>
+            <span id="shippingCount" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">0 items</span>
+          </div>
+          <div id="shippingList" class="space-y-4"></div>
+        </section>
+        <section>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-bag-shopping text-amber-400"></i> Waiting Cart</h2>
+            <span id="cartCount" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">0 items</span>
+          </div>
+          <div id="cartList" class="space-y-3"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- VIEW 2: EXPENSE TRACKER                   -->
+    <!-- ========================================= -->
+    <div id="viewExpenses" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div class="lg:col-span-4 space-y-6">
+        
+        <!-- Budget Setup -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+          <h2 class="text-lg font-semibold text-white mb-2"><i class="fa-solid fa-piggy-bank text-emerald-400"></i> Monthly Budget</h2>
+          <p class="text-xs text-slate-400 mb-4">How much disposable "fun money" do you allow yourself per month?</p>
+          <div class="flex gap-2">
+            <input type="number" id="monthlyBudget" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:border-indigo-500" placeholder="e.g. 1000" />
+            <button onclick="saveBudget()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold">Save</button>
+          </div>
+        </div>
+
+        <!-- Add Expense -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+          <h2 class="text-lg font-semibold text-white mb-4"><i class="fa-solid fa-receipt text-rose-400"></i> Log Expense</h2>
+          <form id="expenseForm" class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">What did you buy?</label>
+              <input type="text" id="expName" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100" placeholder="Coffee, Movie, etc." />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Amount ($)</label>
+              <input type="number" step="0.01" id="expAmount" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100" />
+            </div>
+            <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold py-2.5 rounded-xl transition">Record Expense</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="lg:col-span-8 space-y-6">
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+            <p class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Spent This Month</p>
+            <p id="uiSpent" class="text-3xl font-bold text-rose-400">$0.00</p>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+            <p class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Remaining Budget</p>
+            <p id="uiRemaining" class="text-3xl font-bold text-emerald-400">$0.00</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+          <h3 class="text-md font-bold text-white border-b border-slate-800 pb-3 mb-3">Recent Expenses</h3>
+          <div id="expenseList" class="space-y-2"></div>
         </div>
       </div>
     </div>
 
-    <!-- RIGHT COLUMN: Cart & Shipping Tracker -->
-    <div class="lg:col-span-8 space-y-8">
+    <!-- ========================================= -->
+    <!-- VIEW 3: FINANCING PLAN (Dynamic)          -->
+    <!-- ========================================= -->
+    <div id="viewFinance" class="hidden grid grid-cols-1 gap-8">
       
-      <section>
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-truck-fast text-emerald-400"></i> In Transit (Cooling-Off)
-          </h2>
-          <span id="shippingCount" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">0 items</span>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl max-w-2xl mx-auto w-full">
+        <h2 class="text-xl font-bold text-white mb-2"><i class="fa-solid fa-bullseye text-indigo-400"></i> Set a Goal</h2>
+        <p class="text-sm text-slate-400 mb-6">Select an item from your cart to see how long it will take to save for it based on your actual spending habits.</p>
+        
+        <div class="space-y-5">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Target Item</label>
+            <select id="financeTargetItem" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100" onchange="calculateFinance()"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Desired Timeframe (Months to save)</label>
+            <input type="number" id="financeMonths" value="6" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100" oninput="calculateFinance()" />
+          </div>
         </div>
-        <div id="shippingList" class="space-y-4"></div>
-      </section>
 
-      <section>
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-bag-shopping text-amber-400"></i> Waiting Cart
-          </h2>
-          <span id="cartCount" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">0 items</span>
+        <div id="financeResult" class="mt-8 hidden">
+          <!-- Dynamic Results injected here via JS -->
         </div>
-        <div id="cartList" class="space-y-3"></div>
-      </section>
+      </div>
 
     </div>
   </main>
 
+  <!-- JAVASCRIPT LOGIC -->
   <script>
-    // --- Register Service Worker (For Android App support) ---
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
-    }
+    // --- Register Service Worker ---
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 
-    // --- Catch Bookmarklets AND Android Shares ---
+    // --- Share/Bookmarklet Intercept ---
     const urlParams = new URLSearchParams(window.location.search);
-    
     if (urlParams.has('name')) document.getElementById('itemName').value = urlParams.get('name');
     if (urlParams.has('price')) document.getElementById('itemPrice').value = urlParams.get('price');
     if (urlParams.has('image')) document.getElementById('itemImage').value = urlParams.get('image');
-
     let sharedText = urlParams.get('share_text') || urlParams.get('share_url');
     let sharedTitle = urlParams.get('share_title');
-    
     if (sharedText) {
       document.getElementById('itemImage').value = sharedText;
       if (sharedTitle) document.getElementById('itemName').value = sharedTitle;
     }
-
     if (window.history.replaceState && urlParams.toString() !== "") {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    // --- Local Storage State Initialization ---
+    // --- DATA STATE (Local Storage) ---
     let items = JSON.parse(localStorage.getItem('frugal_items')) || [];
     let savedTotal = parseFloat(localStorage.getItem('frugal_saved_total')) || 0;
+    
+    // New Data for Finances
+    let expenses = JSON.parse(localStorage.getItem('frugal_expenses')) || [];
+    let monthlyBudget = parseFloat(localStorage.getItem('frugal_budget')) || 1000;
+    document.getElementById('monthlyBudget').value = monthlyBudget;
+
     const carriers = ["Impulse Express", "Zen Logistics", "Wallet Saver Post", "Frugal Freight", "Second Thoughts Shipping"];
 
-    const itemForm = document.getElementById('itemForm');
-    const cartList = document.getElementById('cartList');
-    const shippingList = document.getElementById('shippingList');
-    const cartCount = document.getElementById('cartCount');
-    const shippingCount = document.getElementById('shippingCount');
-    const totalSavedDisplay = document.getElementById('totalSaved');
-
-    // --- Save to Device Memory ---
     function saveState() {
       localStorage.setItem('frugal_items', JSON.stringify(items));
       localStorage.setItem('frugal_saved_total', savedTotal.toString());
+      localStorage.setItem('frugal_expenses', JSON.stringify(expenses));
+      localStorage.setItem('frugal_budget', monthlyBudget.toString());
     }
 
-    // --- Audio Chime ---
+    // --- TAB SWITCHING LOGIC ---
+    function switchTab(tabId) {
+      document.getElementById('viewCart').classList.add('hidden');
+      document.getElementById('viewExpenses').classList.add('hidden');
+      document.getElementById('viewFinance').classList.add('hidden');
+      
+      const btns = ['tabBtnCart', 'tabBtnExpenses', 'tabBtnFinance'];
+      btns.forEach(id => {
+        document.getElementById(id).classList.remove('bg-indigo-600', 'text-white');
+        document.getElementById(id).classList.add('bg-slate-800', 'text-slate-300');
+      });
+
+      if (tabId === 'cart') {
+        document.getElementById('viewCart').classList.remove('hidden');
+        document.getElementById('tabBtnCart').classList.add('bg-indigo-600', 'text-white');
+      } else if (tabId === 'expenses') {
+        document.getElementById('viewExpenses').classList.remove('hidden');
+        document.getElementById('tabBtnExpenses').classList.add('bg-indigo-600', 'text-white');
+      } else if (tabId === 'finance') {
+        document.getElementById('viewFinance').classList.remove('hidden');
+        document.getElementById('tabBtnFinance').classList.add('bg-indigo-600', 'text-white');
+        populateFinanceDropdown();
+      }
+      renderAll();
+    }
+
+    // --- AUDIO CHIME ---
     function playDeliveryChime() {
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -175,20 +268,13 @@
         osc1.type = 'sine'; osc1.frequency.setValueAtTime(880, ctx.currentTime);
         gain1.gain.setValueAtTime(0.1, ctx.currentTime); gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
         osc1.start(ctx.currentTime); osc1.stop(ctx.currentTime + 0.5);
-
-        const osc2 = ctx.createOscillator(); const gain2 = ctx.createGain();
-        osc2.connect(gain2); gain2.connect(ctx.destination);
-        osc2.type = 'sine'; osc2.frequency.setValueAtTime(659.25, ctx.currentTime + 0.2);
-        gain2.gain.setValueAtTime(0, ctx.currentTime); gain2.gain.setValueAtTime(0.1, ctx.currentTime + 0.2);
-        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
-        osc2.start(ctx.currentTime + 0.2); osc2.stop(ctx.currentTime + 1.2);
       } catch(e) {}
     }
 
-    // --- Actions ---
-    itemForm.addEventListener('submit', (e) => {
+    // --- CART ACTIONS ---
+    document.getElementById('itemForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      const newItem = {
+      items.unshift({
         id: 'item_' + Date.now(),
         name: document.getElementById('itemName').value,
         price: parseFloat(document.getElementById('itemPrice').value),
@@ -198,175 +284,207 @@
         status: 'cart',
         addedAt: Date.now(),
         shippedAt: null,
-        carrier: null,
         hasChimed: false
-      };
-
-      items.unshift(newItem);
-      saveState();
-      itemForm.reset();
-      render();
+      });
+      saveState(); document.getElementById('itemForm').reset(); renderAll();
     });
 
     function startShipping(id) {
       const item = items.find(i => i.id === id);
-      if (item) {
-        item.status = 'shipping';
-        item.shippedAt = Date.now();
-        item.carrier = carriers[Math.floor(Math.random() * carriers.length)];
-        saveState();
-        render();
-      }
+      if (item) { item.status = 'shipping'; item.shippedAt = Date.now(); item.carrier = carriers[Math.floor(Math.random() * carriers.length)]; saveState(); renderAll(); }
     }
 
     function resolveItem(id, outcome) {
       const item = items.find(i => i.id === id);
       if (!item) return;
-
-      if (outcome === 'saved') {
-        savedTotal += item.price;
-      }
-      
+      if (outcome === 'saved') savedTotal += item.price;
       items = items.filter(i => i.id !== id);
-      saveState();
-      render();
+      saveState(); renderAll();
     }
 
-    function removeItem(id) {
-      items = items.filter(i => i.id !== id);
-      saveState();
-      render();
-    }
+    function removeItem(id) { items = items.filter(i => i.id !== id); saveState(); renderAll(); }
 
     function fastForward(days) {
-      const ms = days * 24 * 60 * 60 * 1000;
-      items.forEach(item => {
-        if (item.shippedAt) {
-          item.shippedAt -= ms;
-        }
+      items.forEach(item => { if (item.shippedAt) item.shippedAt -= (days * 24 * 60 * 60 * 1000); });
+      saveState(); renderAll();
+    }
+
+    // --- EXPENSE ACTIONS ---
+    function saveBudget() {
+      monthlyBudget = parseFloat(document.getElementById('monthlyBudget').value) || 0;
+      saveState(); renderAll();
+    }
+
+    document.getElementById('expenseForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      expenses.unshift({
+        id: 'exp_' + Date.now(),
+        name: document.getElementById('expName').value,
+        amount: parseFloat(document.getElementById('expAmount').value),
+        date: new Date().toLocaleDateString()
       });
-      saveState();
-      render();
+      saveState(); document.getElementById('expenseForm').reset(); renderAll();
+    });
+
+    function removeExpense(id) {
+      expenses = expenses.filter(e => e.id !== id);
+      saveState(); renderAll();
     }
 
-    function getShippingProgress(item) {
-      if (!item.shippedAt) return { pct: 0, statusText: 'Preparing Label' };
-      const elapsedMs = Date.now() - item.shippedAt;
-      const totalMs = item.coolingDays * 24 * 60 * 60 * 1000;
-      const pct = Math.min(100, Math.round((elapsedMs / totalMs) * 100));
-
-      let statusText = 'Label Created';
-      if (pct >= 100) statusText = '📦 Delivered to Digital Doorstep!';
-      else if (pct >= 70) statusText = '🚚 Out for Delivery (Almost arrived)';
-      else if (pct >= 20) statusText = '✈️ In Transit (Cooling off...)';
-
-      const daysLeft = Math.max(0, Math.ceil((totalMs - elapsedMs) / (1000 * 60 * 60 * 24)));
-      return { pct, statusText, daysLeft };
+    // --- FINANCE LOGIC (DYNAMIC MILESTONE) ---
+    function populateFinanceDropdown() {
+      const select = document.getElementById('financeTargetItem');
+      select.innerHTML = '<option value="">-- Choose an item --</option>';
+      items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = `${item.name} ($${item.price.toFixed(2)})`;
+        select.appendChild(opt);
+      });
+      calculateFinance();
     }
 
-    // --- UI Rendering ---
-    function render() {
-      totalSavedDisplay.textContent = `$${savedTotal.toFixed(2)}`;
+    function calculateFinance() {
+      const targetId = document.getElementById('financeTargetItem').value;
+      const targetMonths = parseInt(document.getElementById('financeMonths').value) || 1;
+      const resDiv = document.getElementById('financeResult');
       
-      // Sort newest items first
+      if (!targetId) { resDiv.classList.add('hidden'); return; }
+      
+      const item = items.find(i => i.id === targetId);
+      if (!item) return;
+
+      const spentThisMonth = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+      const remainingBudget = Math.max(0, monthlyBudget - spentThisMonth);
+      
+      const requiredPerMonth = item.price / targetMonths;
+      
+      let dynamicText = "";
+      let isOnTrack = true;
+
+      if (remainingBudget >= requiredPerMonth) {
+        dynamicText = `<div class="bg-emerald-950/40 border border-emerald-500/50 rounded-xl p-4 mt-4 text-emerald-200 text-sm">
+          <i class="fa-solid fa-circle-check mr-2"></i> You are on track! Based on your current spending, you have $${remainingBudget.toFixed(2)} available this month, which covers your goal of $${requiredPerMonth.toFixed(2)}/mo.
+        </div>`;
+      } else {
+        isOnTrack = false;
+        const actualMonthsNeeded = remainingBudget > 0 ? Math.ceil(item.price / remainingBudget) : "Forever";
+        dynamicText = `<div class="bg-rose-950/40 border border-rose-500/50 rounded-xl p-4 mt-4 text-rose-200 text-sm">
+          <i class="fa-solid fa-triangle-exclamation mr-2"></i> <strong>Reality Check:</strong> You want to save $${requiredPerMonth.toFixed(2)}/mo, but you only have $${remainingBudget.toFixed(2)} left in your budget this month due to spending.<br><br>
+          At your current spending rate, it will actually take you <strong>${actualMonthsNeeded} months</strong> to save for this, not ${targetMonths}.
+        </div>`;
+      }
+
+      resDiv.innerHTML = `
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-slate-950 border border-slate-700 rounded-xl p-4 text-center">
+            <p class="text-xs text-slate-400 mb-1">Target Savings</p>
+            <p class="text-2xl font-bold text-indigo-400">$${requiredPerMonth.toFixed(2)} <span class="text-sm font-normal text-slate-500">/ mo</span></p>
+          </div>
+          <div class="bg-slate-950 border ${isOnTrack ? 'border-emerald-700' : 'border-rose-700'} rounded-xl p-4 text-center">
+            <p class="text-xs text-slate-400 mb-1">Available Savings</p>
+            <p class="text-2xl font-bold ${isOnTrack ? 'text-emerald-400' : 'text-rose-400'}">$${remainingBudget.toFixed(2)} <span class="text-sm font-normal text-slate-500">/ mo</span></p>
+          </div>
+        </div>
+        ${dynamicText}
+      `;
+      resDiv.classList.remove('hidden');
+    }
+
+    // --- RENDER EVERYTHING ---
+    function renderAll() {
+      // 1. Header
+      document.getElementById('totalSaved').textContent = `$${savedTotal.toFixed(2)}`;
+      
+      // 2. Cart & Shipping UI
       items.sort((a, b) => b.addedAt - a.addedAt);
-      
       const cartItems = items.filter(i => i.status === 'cart');
       const shippingItems = items.filter(i => i.status === 'shipping');
 
-      cartCount.textContent = `${cartItems.length} items`;
-      shippingCount.textContent = `${shippingItems.length} items`;
+      document.getElementById('cartCount').textContent = `${cartItems.length} items`;
+      document.getElementById('shippingCount').textContent = `${shippingItems.length} items`;
 
-      if (cartItems.length === 0) {
-        cartList.innerHTML = `<div class="p-6 border border-dashed border-slate-800 rounded-2xl text-center text-slate-500 text-xs">Waiting cart is empty.</div>`;
-      } else {
-        cartList.innerHTML = cartItems.map(item => `
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-3 w-full sm:w-auto">
-              <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-14 h-14 rounded-lg object-cover bg-slate-800 border border-slate-700" />
-              <div>
-                <h4 class="font-medium text-slate-100 text-sm">${item.name}</h4>
-                <p class="text-xs text-slate-400 line-clamp-1 italic">"${item.reason}"</p>
-                <span class="text-xs font-semibold text-emerald-400">$${item.price.toFixed(2)}</span>
-              </div>
-            </div>
-            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <button onclick="removeItem('${item.id}')" class="text-xs text-slate-500 hover:text-rose-400 px-3 py-2 rounded-lg transition">Delete</button>
-              <button onclick="startShipping('${item.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md">
-                <i class="fa-solid fa-truck"></i> Checkout & Ship (${item.coolingDays}d)
-              </button>
+      const cartList = document.getElementById('cartList');
+      if (cartItems.length === 0) cartList.innerHTML = `<div class="p-6 border border-dashed border-slate-800 rounded-2xl text-center text-slate-500 text-xs">Waiting cart is empty.</div>`;
+      else cartList.innerHTML = cartItems.map(item => `
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex justify-between gap-4">
+          <div class="flex gap-3">
+            <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-12 h-12 rounded-lg object-cover bg-slate-800" />
+            <div>
+              <h4 class="font-medium text-slate-100 text-sm">${item.name}</h4>
+              <span class="text-xs font-semibold text-emerald-400">$${item.price.toFixed(2)}</span>
             </div>
           </div>
-        `).join('');
-      }
+          <div class="flex flex-col gap-2 justify-center">
+            <button onclick="startShipping('${item.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-md">Ship (${item.coolingDays}d)</button>
+            <button onclick="removeItem('${item.id}')" class="text-[11px] text-slate-500 hover:text-rose-400">Delete</button>
+          </div>
+        </div>
+      `).join('');
 
-      if (shippingItems.length === 0) {
-        shippingList.innerHTML = `<div class="p-8 border border-dashed border-slate-800 rounded-2xl text-center text-slate-500 text-xs">No active packages cooling off. Checkout an item to start tracking!</div>`;
-      } else {
+      const shippingList = document.getElementById('shippingList');
+      if (shippingItems.length === 0) shippingList.innerHTML = `<div class="p-8 border border-dashed border-slate-800 rounded-2xl text-center text-slate-500 text-xs">No active packages cooling off.</div>`;
+      else {
         let chimeTriggered = false;
         shippingList.innerHTML = shippingItems.map(item => {
-          const { pct, statusText, daysLeft } = getShippingProgress(item);
+          const elapsed = Date.now() - item.shippedAt;
+          const total = item.coolingDays * 24 * 60 * 60 * 1000;
+          const pct = Math.min(100, Math.round((elapsed / total) * 100));
           const isDelivered = pct >= 100;
-
-          if (isDelivered && !item.hasChimed) {
-            item.hasChimed = true;
-            chimeTriggered = true;
-          }
+          
+          if (isDelivered && !item.hasChimed) { item.hasChimed = true; chimeTriggered = true; saveState(); }
 
           return `
-            <div class="bg-slate-900 border ${isDelivered ? 'border-indigo-500/50 ring-1 ring-indigo-500/30' : 'border-slate-800'} rounded-2xl p-5 shadow-lg space-y-4">
-              <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
+            <div class="bg-slate-900 border ${isDelivered ? 'border-indigo-500/50' : 'border-slate-800'} rounded-2xl p-5 shadow-lg space-y-4">
+              <div class="flex justify-between gap-3">
+                <div class="flex gap-3">
                   <img src="${item.image}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&q=80'" class="w-12 h-12 rounded-lg object-cover bg-slate-800" />
-                  <div>
-                    <h3 class="font-bold text-slate-100 text-sm">${item.name}</h3>
-                    <p class="text-[11px] text-slate-400 font-mono">Carrier: ${item.carrier} | Trk: ${item.id.toUpperCase()}</p>
-                  </div>
+                  <div><h3 class="font-bold text-slate-100 text-sm">${item.name}</h3><p class="text-[11px] text-slate-400">Trk: ${item.id.toUpperCase()}</p></div>
                 </div>
-                <div class="text-right">
-                  <div class="text-xs font-bold text-emerald-400">$${item.price.toFixed(2)}</div>
-                  <div class="text-[11px] text-slate-400">${isDelivered ? 'Arrived' : `${daysLeft} days remaining`}</div>
-                </div>
+                <div class="text-right"><div class="text-xs font-bold text-emerald-400">$${item.price.toFixed(2)}</div></div>
               </div>
-
-              <!-- Progress Bar -->
-              <div class="space-y-1.5">
-                <div class="flex justify-between text-xs font-medium">
-                  <span class="${isDelivered ? 'text-indigo-400 font-bold' : 'text-slate-300'}">${statusText}</span>
-                  <span class="text-slate-400">${pct}%</span>
-                </div>
-                <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
-                  <div class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full transition-all duration-500" style="width: ${pct}%"></div>
-                </div>
+              <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                <div class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full" style="width: ${pct}%"></div>
               </div>
-
-              <!-- Post-Delivery Decision Gate -->
               ${isDelivered ? `
-                <div class="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 bg-indigo-950/20 p-3 rounded-xl">
-                  <p class="text-xs text-indigo-200">Package arrived! Did you survive the cooling period without it?</p>
-                  <div class="flex gap-2 w-full sm:w-auto">
-                    <button onclick="resolveItem('${item.id}', 'saved')" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition">
-                      🎉 Changed Mind (Saved $${item.price})
-                    </button>
-                    <button onclick="resolveItem('${item.id}', 'bought')" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3.5 py-1.5 rounded-lg transition">
-                      Still Want (Buy)
-                    </button>
-                  </div>
+                <div class="pt-3 border-t border-slate-800/80 flex justify-between gap-3 bg-indigo-950/20 p-3 rounded-xl">
+                  <button onclick="resolveItem('${item.id}', 'saved')" class="bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">🎉 Changed Mind (Save)</button>
+                  <button onclick="resolveItem('${item.id}', 'bought')" class="bg-slate-800 text-slate-300 text-xs px-3 py-1.5 rounded-lg">Still Want (Buy)</button>
                 </div>
               ` : ''}
             </div>
           `;
         }).join('');
+        if (chimeTriggered) playDeliveryChime();
+      }
 
-        if (chimeTriggered) {
-          playDeliveryChime();
-          saveState(); // Update memory so it knows it chimed
-        }
+      // 3. Expenses UI
+      const spentThisMonth = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+      document.getElementById('uiSpent').textContent = `$${spentThisMonth.toFixed(2)}`;
+      document.getElementById('uiRemaining').textContent = `$${Math.max(0, monthlyBudget - spentThisMonth).toFixed(2)}`;
+      
+      const el = document.getElementById('expenseList');
+      if (expenses.length === 0) el.innerHTML = `<p class="text-slate-500 text-xs text-center py-4">No expenses logged yet.</p>`;
+      else el.innerHTML = expenses.map(exp => `
+        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+          <div>
+            <p class="text-sm font-medium text-slate-200">${exp.name}</p>
+            <p class="text-[10px] text-slate-500">${exp.date}</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-bold text-rose-400">-$${exp.amount.toFixed(2)}</span>
+            <button onclick="removeExpense('${exp.id}')" class="text-slate-600 hover:text-rose-500"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+      `).join('');
+
+      // Update finance calculation if on that tab
+      if (!document.getElementById('viewFinance').classList.contains('hidden')) {
+        calculateFinance();
       }
     }
 
-    // Initialize application UI
-    render();
+    renderAll();
   </script>
 </body>
 </html>
