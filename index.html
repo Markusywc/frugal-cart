@@ -100,7 +100,7 @@
       </div>
 
       <div class="lg:col-span-8 space-y-8">
-        <!-- NEW: READY TO CHECKOUT SECTION -->
+        <!-- READY TO CHECKOUT SECTION -->
         <section id="readySection" class="hidden">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-bold text-white flex items-center gap-2">
@@ -412,7 +412,7 @@
       renderAll();
       
       alert(`Month closed successfully! $${allocatedTotal.toFixed(2)} was securely allocated to your savings goals.`);
-      switchTab('cart'); // Swapping to cart to let them see if a goal got fully promoted!
+      switchTab('cart'); 
     }
 
     // --- FINANCE LOGIC ---
@@ -444,7 +444,6 @@
 
     function renderFinanceTab() {
       const select = document.getElementById('financeTargetItem');
-      // Fix: Filter out items that are already fully funded or currently tracked
       const availableItems = items.filter(i => !i.financeGoal && !isItemReady(i));
       
       if (availableItems.length === 0) {
@@ -459,7 +458,9 @@
         });
       }
 
-      const activeGoals = items.filter(i => i.financeGoal);
+      // MODIFICATION: Sort active goals strictly by oldest first (timestamp order) to match the waterfall
+      const activeGoals = items.filter(i => i.financeGoal).sort((a, b) => a.addedAt - b.addedAt);
+      
       const unfundedGoals = activeGoals.filter(i => (i.financeGoal.accumulated || 0) < i.price);
       const globalSummary = document.getElementById('financeGlobalSummary');
       const activeList = document.getElementById('financeActiveList');
@@ -553,7 +554,7 @@
       }).join('');
     }
 
-    // --- CHECK IF ITEM IS PROMOTED (NEW) ---
+    // --- CHECK IF ITEM IS PROMOTED ---
     function isItemReady(item) {
       if (item.financeGoal && item.financeGoal.accumulated >= item.price) return true;
       if (item.status === 'shipping') {
@@ -568,6 +569,7 @@
     function renderAll() {
       document.getElementById('totalSaved').textContent = `$${savedTotal.toFixed(2)}`;
       
+      // Sort items globally by newest first (for the cart logic)
       items.sort((a, b) => b.addedAt - a.addedAt);
       
       const readyItems = items.filter(i => isItemReady(i));
